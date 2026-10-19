@@ -309,7 +309,7 @@ export default function App() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [screen, setScreen] = useState<"feed" | "playback">("feed");
   // Bottom navigation tab: Clips (the feed) or Home (HomeScreen, drawn over the feed, which pauses meanwhile)
-  const [tab, setTab] = useState<"Clips" | "Home">("Clips");
+  const [tab, setTab] = useState<"Clips" | "Home">("Home");
   // Views the user came from, so Back can return to exactly where they were
   const [trail, setTrail] = useState<{ screen: "feed" | "playback"; sheetOpen: boolean }[]>([]);
   const [muted, setMuted] = useState(true);

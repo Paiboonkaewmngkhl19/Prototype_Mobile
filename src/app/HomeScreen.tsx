@@ -160,6 +160,11 @@ export default function HomeScreen({
   const onChip = (c: string) => { setChip(c); if (c !== "All") onToast(`${c} (demo)`); };
   const chipsRef = useRef<HTMLDivElement>(null);
   const [chipsDocked, setChipsDocked] = useState(false);
+  // docked chips fold into a one-line subtitle (the active filter) while the page keeps scrolling down past the
+  // next rail, and expand back into chips as soon as it scrolls up
+  const [chipsFolded, setChipsFolded] = useState(false);
+  const lastY = useRef(0);
+  const dockedAt = useRef(0);
 
   // the hero carousel moves on every 5s; a swipe moves it at once and restarts the wait
   const [tick, setTick] = useState(0);
@@ -182,7 +187,7 @@ export default function HomeScreen({
     setMenuOpen(false);
     if (t === "Home" || t === "Sport") {
       setTab(t); setSlide(0); setTick(k => k + 1); scroller.current?.scrollTo({ top: 0 });
-      setShowTabs(false); setScrolled(false); setCompact(false); setChipsDocked(false);
+      setShowTabs(false); setScrolled(false); setCompact(false); setChipsDocked(false); setChipsFolded(false);
     } else demo(t);
   };
   const slides = tab === "Sport" ? SPORT_SLIDES : SLIDES;
@@ -207,7 +212,7 @@ export default function HomeScreen({
             {/* the app logo, also while the compact header is expanded (tapping it then collapses it again) */}
             <span onClick={() => { if (compact) setMenuOpen(false); }} className="text-white transition-all duration-300"
               style={{ fontSize: 20, fontWeight: 800, letterSpacing: 0.5, opacity: titleOn ? 0 : 1, transform: titleOn ? "translateY(-8px)" : "none", pointerEvents: titleOn ? "none" : "auto" }}>AIS <span style={{ color: "#b8f416" }}>PLAY</span></span>
-            <button onClick={() => setMenuOpen(true)} aria-expanded={menuOpen} aria-label={`${tab}: show sections`}
+            <button onClick={() => { setChipsFolded(false); setMenuOpen(true); }} aria-expanded={menuOpen} aria-label={`${tab}: show sections`}
               className="absolute left-0 top-1/2 flex items-center gap-2 transition-all duration-300 whitespace-nowrap"
               style={{ opacity: titleOn ? 1 : 0, transform: `translateY(${titleOn ? "-50%" : "calc(-50% + 8px)"})`, pointerEvents: titleOn ? "auto" : "none" }}>
               <span className="w-8 h-8 flex items-center justify-center"><ChevronDown size={20} className="text-white" /></span>
@@ -233,7 +238,31 @@ export default function HomeScreen({
           ))}
         </div>
         {/* docked chips: 16px under the tab row when that's expanded, 4px under the compact title otherwise */}
-        {sport && chipsDocked && <div className="pb-3 transition-[padding] duration-300" style={{ paddingTop: tabsOn ? 16 : 4 }}><SportChips chip={chip} onPick={onChip} /></div>}
+        {sport && chipsDocked && (
+          <div className="relative overflow-hidden" style={{
+            // chips: 40px row + padding; folded: a 20px subtitle line
+            // folded, it's pulled up into the title row's bottom space so the subtitle sits right under "Sport"
+            height: chipsFolded && !tabsOn ? 28 : (tabsOn ? 16 : 4) + 40 + 12,
+            marginTop: chipsFolded && !tabsOn ? -8 : 0,
+            transition: "height .3s cubic-bezier(.2,0,0,1), margin-top .3s cubic-bezier(.2,0,0,1)",
+          }}>
+            <div className="absolute inset-x-0 top-0 pb-3 transition-all duration-300" style={{
+              paddingTop: tabsOn ? 16 : 4,
+              opacity: chipsFolded && !tabsOn ? 0 : 1, transform: chipsFolded && !tabsOn ? "translateY(-12px)" : "none",
+              pointerEvents: chipsFolded && !tabsOn ? "none" : "auto",
+            }}><SportChips chip={chip} onPick={onChip} /></div>
+            {/* subtitle under the "⌄ Sport" title, lined up with its text; tapping it brings the chips back; the title's ⌄ expands both tabs and chips */}
+            <button onClick={() => setChipsFolded(false)} aria-label="Show sport filters"
+              className="absolute top-0 flex items-center transition-all duration-300 whitespace-nowrap"
+              style={{
+                left: 56, height: 20, fontSize: 14, color: ON_VARIANT,
+                opacity: chipsFolded && !tabsOn ? 1 : 0, transform: chipsFolded && !tabsOn ? "none" : "translateY(8px)",
+                pointerEvents: chipsFolded && !tabsOn ? "auto" : "none",
+              }}>
+              {chip === "All" ? "All sports" : chip}
+            </button>
+          </div>
+        )}
       </div>
 
       <div
@@ -249,7 +278,16 @@ export default function HomeScreen({
           const c = !!l && !!p && y > 0 && p.top <= l.bottom;
           setCompact(c);
           const cr = chipsRef.current?.getBoundingClientRect();
-          setChipsDocked(!!l && !!cr && y > 0 && cr.top <= l.bottom);
+          const docked = !!l && !!cr && y > 0 && cr.top <= l.bottom;
+          if (docked && !chipsDocked) dockedAt.current = y;
+          setChipsDocked(docked);
+          // fold once scrolling down has carried the next rail (Sport Reel) a little way under the docked chips;
+          // any upward scroll unfolds them again
+          const dy = y - lastY.current;
+          lastY.current = y;
+          if (!docked) setChipsFolded(false);
+          else if (dy > 2 && y - dockedAt.current > 48) setChipsFolded(true);
+          else if (dy < -2) setChipsFolded(false);
           // the expanded header folds back up once the page moves on
           if (!c || Math.abs(y - openedAt.current) > 40) setMenuOpen(false);
         }}
