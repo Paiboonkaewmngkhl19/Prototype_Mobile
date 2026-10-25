@@ -26,11 +26,20 @@ import iconClearScreen from "../assets/shorts/clear-screen.svg";
 import iconNavHome from "../assets/shorts/nav-home.svg";
 import iconNavHomeActive from "../assets/shorts/nav-home-active.svg";
 import iconNavTv from "../assets/shorts/nav-tv.svg";
+import iconNavTvActive from "../assets/shorts/nav-tv-active.svg";
 import iconNavShorts from "../assets/shorts/nav-shorts.svg";
 import iconNavShortsDefault from "../assets/shorts/nav-shorts-default.svg";
 import iconNavSearch from "../assets/shorts/nav-search.svg";
 import avatarUser from "../assets/shorts/avatar-user.png";
 import HomeScreen from "./HomeScreen";
+import TVScreen, { CHANNELS as TV_CHANNELS, type TVPos, type Channel } from "./TVScreen";
+import iconSheetClose from "../assets/share/close.svg";
+import iconSheetLink from "../assets/share/link.svg";
+import iconSheetMore from "../assets/share/more.svg";
+import PipPlayer from "./PipPlayer";
+import BrowseChannels from "./BrowseChannels";
+import AllPrograms from "./AllPrograms";
+import { BG, PANEL } from "./theme";
 // Brand marks for the share sheet (Simple Icons, CC0), inlined so they take the tile's colour
 import logoLine from "../assets/shorts/share-line.svg?raw";
 import logoMessenger from "../assets/shorts/share-messenger.svg?raw";
@@ -308,8 +317,35 @@ export default function App() {
   const [idx, setIdx] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [screen, setScreen] = useState<"feed" | "playback">("feed");
-  // Bottom navigation tab: Clips (the feed) or Home (HomeScreen, drawn over the feed, which pauses meanwhile)
-  const [tab, setTab] = useState<"Clips" | "Home">("Home");
+  // Bottom navigation tab: Clips (the feed), or Home / TV (HomeScreen / TVScreen, drawn over the feed, which pauses meanwhile)
+  const [tab, setTab] = useState<"Clips" | "Home" | "TV">("Home");
+  // TV ↔ PiP: leaving the TV page keeps its channel playing in a mini-player over Home; expanding it (or the TV tab)
+  // brings the TV page back at the same channel and position
+  const [pip, setPip] = useState<TVPos | null>(null);
+  const [tvStart, setTvStart] = useState<TVPos | null>(null);
+  const [tvShare, setTvShare] = useState<Channel | null>(null);
+  // the TV tab shows the player, or Browse Channels (with what was playing carried on in the PiP mini-player)
+  const [tvView, setTvView] = useState<"player" | "browse" | "programs">("player");
+
+  // ── Page history: every Back returns to the page you came from ──
+  // A page is a tab plus, on the TV tab, which view (player / Browse Channels / All Program Guide). Going anywhere
+  // remembers where you were; Back steps back through that (and to Home once there's nothing left). Arriving at the
+  // TV player picks up the channel given, or else what's playing in the PiP mini-player.
+  type Page = { tab: "Clips" | "Home" | "TV"; tvView: "player" | "browse" | "programs" };
+  const history = useRef<Page[]>([]);
+  const show = (to: Page, start?: TVPos | null) => {
+    setTab(to.tab); setTvView(to.tvView);
+    if (to.tab === "TV" && to.tvView === "player") { setTvStart(start ?? pip ?? null); setPip(null); }
+  };
+  const go = (to: Page, start?: TVPos | null) => {
+    const here: Page = { tab, tvView };
+    const same = here.tab === to.tab && (to.tab !== "TV" || here.tvView === to.tvView);
+    if (!same) history.current.push(here);
+    show(to, start);
+  };
+  const back = () => show(history.current.pop() ?? { tab: "Home", tvView: "player" });
+  const openTV = () => go({ tab: "TV", tvView: "player" });
+  const playTV = (pos: TVPos) => go({ tab: "TV", tvView: "player" }, pos);
   // Views the user came from, so Back can return to exactly where they were
   const [trail, setTrail] = useState<{ screen: "feed" | "playback"; sheetOpen: boolean }[]>([]);
   const [muted, setMuted] = useState(true);
@@ -560,8 +596,50 @@ export default function App() {
                 topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
                 bottom={feedBottom}
                 shorts={FEED.map(f => ({ img: f.img, title: f.title }))}
-                onOpenShort={i => { flushSync(() => setIdx(i)); setTab("Clips"); }}
+                onOpenShort={i => { flushSync(() => setIdx(i)); go({ tab: "Clips", tvView }); }}
                 onToast={toast}
+              />
+            )}
+            {tab === "TV" && tvView === "player" && (
+              <TVScreen
+                topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
+                bottom={feedBottom}
+                muted={muted}
+                start={tvStart}
+                onShare={setTvShare}
+                onBrowse={pos => { setPip(pos); go({ tab: "TV", tvView: "browse" }); }}
+                onPrograms={pos => { setPip(pos); go({ tab: "TV", tvView: "programs" }); }}
+                onBack={pos => { setPip(pos); back(); }}
+                onToast={toast}
+              />
+            )}
+            {tab === "TV" && tvView === "browse" && (
+              <BrowseChannels
+                topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
+                bottom={feedBottom}
+                watching={pip?.cur}
+                onBack={back}
+                onPick={cur => playTV(pip && pip.cur === cur ? pip : { cur, t: 0 })}
+              />
+            )}
+            {tab === "TV" && tvView === "programs" && (
+              <AllPrograms
+                topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
+                bottom={feedBottom}
+                watching={pip?.cur}
+                onBack={back}
+                onPick={cur => playTV(pip && pip.cur === cur ? pip : { cur, t: 0 })}
+                onToast={toast}
+              />
+            )}
+            {pip && (tab === "Home" || (tab === "TV" && tvView !== "player")) && (
+              <PipPlayer
+                key={`${pip.cur}-${pip.t}`}
+                ch={TV_CHANNELS[pip.cur]} cur={pip.cur} startT={pip.t} muted={muted}
+                bottom={feedBottom}
+                topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
+                onClose={() => setPip(null)}
+                onExpand={playTV}
               />
             )}
             <BottomNav
@@ -570,7 +648,7 @@ export default function App() {
               phone={isPhone}
               onHeight={setPhoneNavH}
               active={tab}
-              onTab={label => { if (label === "Home" || label === "Clips") setTab(label); else toast(`${label} (demo)`); }}
+              onTab={label => { if (label === "TV") openTV(); else if (label === "Home" || label === "Clips") go({ tab: label, tvView }); else toast(`${label} (demo)`); }}
             />
 
             {/* Details page (the CTA opens it) */}
@@ -619,7 +697,7 @@ export default function App() {
                   />
                   <motion.div
                     className="absolute bottom-0 left-0 right-0 z-40 rounded-t-[24px] overflow-hidden"
-                    style={{ background: "#1b1b1f", paddingBottom: navBottom }}
+                    style={{ background: PANEL, paddingBottom: navBottom }}
                     initial={{ y: "100%" }}
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
@@ -634,6 +712,29 @@ export default function App() {
                       onClose={() => setShareOpen(false)}
                       onDone={msg => { setShareOpen(false); toast(msg); }}
                     />
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
+            {/* Share a TV channel (Figma "Mobile / Bottom Sheet", PLAY-player 1672:57603) */}
+            <AnimatePresence>
+              {tvShare && tab === "TV" && (
+                <>
+                  <motion.div
+                    className="absolute inset-0 bg-black/70 z-30"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    onClick={() => setTvShare(null)}
+                  />
+                  <motion.div
+                    className="absolute bottom-0 left-0 right-0 z-40 rounded-t-[16px] overflow-hidden"
+                    style={{ background: PANEL, paddingBottom: navBottom }}
+                    initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+                    transition={{ type: "spring", stiffness: 340, damping: 40 }}
+                    drag="y" dragConstraints={{ top: 0 }} dragElastic={{ top: 0.1, bottom: 0.5 }}
+                    onDragEnd={(_e, info) => { if (info.offset.y > 80) setTvShare(null); }}
+                  >
+                    <TVShareSheet ch={tvShare} onClose={() => setTvShare(null)} onDone={msg => { setTvShare(null); toast(msg); }} />
                   </motion.div>
                 </>
               )}
@@ -665,7 +766,7 @@ export default function App() {
           <motion.div
             key={toastMsg}
             className="absolute left-1/2 z-50 px-4 py-2 rounded-full text-[13px] text-white whitespace-nowrap pointer-events-none"
-            style={{ top: isPhone ? "calc(env(safe-area-inset-top, 0px) + 12px)" : STATUS_H + 8, background: "rgba(40,40,44,0.95)", fontFamily: "'Open Sans'", x: "-50%" }}
+            style={{ top: isPhone ? "calc(env(safe-area-inset-top, 0px) + 12px)" : STATUS_H + 8, background: "rgba(28,33,48,0.95)", fontFamily: "'Open Sans'", x: "-50%" }}
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -1325,12 +1426,63 @@ function ShareSheet({ item, onClose, onDone }: { item: FeedItem; onClose: () => 
         ))}
       </div>
       <div className="flex gap-3 px-5 pb-5">
-        <button onClick={copy} className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2 text-white text-[13px] font-semibold" style={{ background: "#2e2e34" }}>
+        <button onClick={copy} className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2 text-white text-[13px] font-semibold" style={{ background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.16)" }}>
           <Link2 size={16} /> Copy link
         </button>
-        <button onClick={more} className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2 text-white text-[13px] font-semibold" style={{ background: "#2e2e34" }}>
+        <button onClick={more} className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2 text-white text-[13px] font-semibold" style={{ background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.16)" }}>
           <MoreHorizontal size={16} /> More
         </button>
+      </div>
+    </div>
+  );
+}
+
+// TV channel share sheet: handle, "Share" header with close, a divider, then the programme card (16:9 thumbnail,
+// programme and channel), the share apps as a rail of 56px circles, and Copy link / More
+function TVShareSheet({ ch, onClose, onDone }: { ch: Channel; onClose: () => void; onDone: (msg: string) => void }) {
+  const link = `${window.location.origin}${BASE}#tv-${ch.no}`;
+  const copy = () => { navigator.clipboard?.writeText(link).catch(() => {}); onDone("Link copied"); };
+  const more = () => {
+    if (navigator.share) navigator.share({ title: `${ch.program} · ${ch.name}`, url: link }).catch(() => {});
+    else onDone("Sharing (demo)");
+  };
+  const btn = { background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.16)", boxShadow: "0 4px 4px rgba(0,0,0,0.2)" };
+  return (
+    <div className="flex flex-col pb-2" style={{ fontFamily: "'Open Sans'" }}>
+      <div className="flex justify-center py-2"><div className="rounded-[2px]" style={{ width: 40, height: 4, background: "#a8a8a8", opacity: 0.4 }} /></div>
+      <div className="flex items-center justify-between px-4 py-3">
+        <p className="m-0 flex-1" style={{ fontSize: 16, fontWeight: 500, color: "#e8e8e8" }}>Share</p>
+        <button onClick={onClose} aria-label="Close" className="shrink-0"><img src={iconSheetClose} alt="" width={24} height={24} className="block" /></button>
+      </div>
+      <div style={{ height: 1, background: "#5a5a5a", opacity: 0.3 }} />
+      <div className="flex flex-col pt-3">
+        {/* what's being shared */}
+        <div className="px-4">
+          <div className="flex items-center gap-3 p-2 rounded-[8px]" style={{ background: "rgba(0,0,0,0.25)" }}>
+            <img src={ch.poster} alt="" className="shrink-0 rounded-[12px] object-cover" style={{ width: 120, height: 67.2 }} />
+            <div className="flex flex-1 flex-col gap-1 min-w-0" style={{ color: "#e8e8e8" }}>
+              <p className="m-0" style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{ch.program}</p>
+              <p className="m-0 truncate" style={{ fontSize: 12, lineHeight: "16px", letterSpacing: 0.4 }}>{ch.name} · {ch.no}</p>
+            </div>
+          </div>
+        </div>
+        {/* share apps */}
+        <div className="flex gap-2 overflow-x-auto p-4 pr-8 home-rail" style={{ scrollbarWidth: "none" }}>
+          {SHARE_TARGETS.map(t => (
+            <button key={t.label} onClick={() => onDone(`Shared to ${t.label} (demo)`)} aria-label={`Share to ${t.label}`}
+              className={`shrink-0 rounded-full flex items-center justify-center overflow-hidden ${t.full ? "[&>svg]:w-14 [&>svg]:h-14" : "[&>svg]:w-[30px] [&>svg]:h-[30px]"}`}
+              style={{ width: 56, height: 56, background: t.bg, color: t.color, border: t.border }}
+              dangerouslySetInnerHTML={{ __html: t.logo }} />
+          ))}
+        </div>
+        <div className="flex gap-2 px-4 pb-3">
+          <button onClick={copy} className="flex-1 flex items-center justify-center gap-2 rounded-[10px] px-[14px] py-[6px]" style={{ minHeight: 40, ...btn }}>
+            <img src={iconSheetLink} alt="" width={20} height={20} /><span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0" }}>Copy link</span>
+          </button>
+          <button onClick={more} className="flex-1 flex items-center justify-center gap-2 rounded-[10px] px-[14px] py-[6px]" style={{ minHeight: 40, ...btn }}>
+            <img src={iconSheetMore} alt="" width={20} height={20} /><span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0" }}>More</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1352,7 +1504,7 @@ function StatusBar() {
 // ─── Bottom navigation (Figma "Mobile / Bottom Navigation"), Shorts selected ─────
 const NAV_TABS = [
   { label: "Home", icon: iconNavHome, activeIcon: iconNavHomeActive },
-  { label: "TV", icon: iconNavTv },
+  { label: "TV", icon: iconNavTv, activeIcon: iconNavTvActive },
   { label: "Clips", icon: iconNavShortsDefault, activeIcon: iconNavShorts },
   { label: "Search", icon: iconNavSearch },
   { label: "Profile", avatar: avatarUser },
@@ -1375,7 +1527,7 @@ function BottomNav({ bottom, indicator, phone, onHeight, active, onTab }: {
     <div
       ref={ref}
       className="absolute left-0 right-0 bottom-0 z-20 flex flex-col"
-      style={{ background: "#101010", borderTop: "1px solid #282e38", filter: "drop-shadow(0 -8px 12px rgba(0,0,0,0.33))", paddingBottom: phone ? 0 : bottom }}
+      style={{ background: BG, borderTop: "1px solid #282e38", filter: "drop-shadow(0 -8px 12px rgba(0,0,0,0.33))", paddingBottom: phone ? 0 : bottom }}
     >
       <div className="flex items-center w-full" style={phone ? { paddingTop: 12 } : { height: NAV_H }}>
         {NAV_TABS.map(tb => ({ ...tb, active: tb.label === active })).map(t => (

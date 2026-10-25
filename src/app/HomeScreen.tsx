@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Cast, Play, Plus, Check, ChevronRight, History, Heart, MoreVertical, ChevronDown } from "lucide-react";
 import iconCrown from "../assets/shorts/crown.svg";
+import { PAGE_BG, ON_SURFACE, ON_VARIANT, LIVE, PILL, PILL_RING, CHIP_BG, CHIP_BORDER, GLASS_CARD } from "./theme";
 
 // ─── Home tab (Figma "AIS PLAY / Home / Full Page", node 695:69713) ─────────────────────────────────────────────
 // The phone Home screen behind the bottom navigation's Home tab: a full-bleed hero carousel under the header and
@@ -11,7 +12,6 @@ const BASE = import.meta.env.BASE_URL;
 const a = (path: string) => `${BASE}${path}`;
 const tag = (name: string) => a(`badges/tag-${name}.png`);
 const FONT = "'Open Sans', sans-serif";
-const ON_SURFACE = "#e8e8e8", ON_VARIANT = "#a8a8a8", LIVE = "#ea5454";
 
 interface Slide { title: string; img: string; pos?: string; drop?: number; platform: string; channel: string; live?: boolean; time?: string }
 const SLIDES: Slide[] = [
@@ -76,6 +76,7 @@ const EXCLUSIVE = [
 ];
 
 const TABS = ["Home", "LiveTV", "Sport", "Movie"];
+const HERO_FADE = "linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%)";
 
 // ─── Sport tab (Figma "AIS PLAY / Sport", node 701:71230) ───
 const SPORT_SLIDES: Slide[] = [
@@ -195,7 +196,7 @@ export default function HomeScreen({
   const sport = tab === "Sport";
 
   return (
-    <div className="absolute inset-x-0 top-0 z-[15]" style={{ bottom, background: "#101010", fontFamily: FONT }}>
+    <div className="absolute inset-x-0 top-0 z-[15]" style={{ bottom, background: PAGE_BG, fontFamily: FONT }}>
       {/* Header: logo + Cast, then the top tabs. Transparent over the hero, solid once the page scrolls. */}
       <div
         ref={headerRef}
@@ -203,7 +204,7 @@ export default function HomeScreen({
         style={{
           paddingTop: topInset,
           // scrolled: Figma's "Mobile / Header Detail Page" glass, a dark-to-clear tint over a blur of the page below
-          background: scrolled ? "linear-gradient(180deg, rgba(16,16,16,0.6), rgba(118,118,118,0))" : "linear-gradient(180deg, rgba(0,0,0,0.65), rgba(0,0,0,0))",
+          background: scrolled ? "linear-gradient(180deg, rgba(7,14,22,0.6), rgba(118,128,150,0))" : "linear-gradient(180deg, rgba(0,0,0,0.65), rgba(0,0,0,0))",
           backdropFilter: scrolled ? "blur(20px)" : "none", WebkitBackdropFilter: scrolled ? "blur(20px)" : "none",
         }}
       >
@@ -295,7 +296,7 @@ export default function HomeScreen({
         {/* Hero */}
         <div
           className="relative w-full overflow-hidden"
-          style={{ height: 647, borderRadius: "0 0 16px 16px" }}
+          style={{ height: 647 }}
           onPointerDown={e => { swipe.current = { x: e.clientX, y: e.clientY }; }}
           onPointerUp={e => {
             const st = swipe.current; swipe.current = null;
@@ -304,6 +305,8 @@ export default function HomeScreen({
             if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(e.clientY - st.y)) go(dx < 0 ? 1 : -1);
           }}
         >
+          {/* artwork and its scrim fade out with a mask (not a colour), so the hero blends into any page background */}
+          <div className="absolute inset-0 pointer-events-none" style={{ WebkitMaskImage: HERO_FADE, maskImage: HERO_FADE }}>
           {slides.map((sl, i) => (
             // drop: art with its key graphics right at the top (the vertical Liverpool vs Brentford poster) starts this
             // much lower, fading in from the page colour, so the header doesn't sit on top of them
@@ -314,7 +317,9 @@ export default function HomeScreen({
                 ...(sl.drop ? { WebkitMaskImage: "linear-gradient(180deg, transparent, #000 48px)", maskImage: "linear-gradient(180deg, transparent, #000 48px)" } : {}),
               }} />
           ))}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(16,16,16,0) 45%, rgba(16,16,16,0.85) 78%, #101010 100%)" }} />
+          {/* dark scrim behind the title and buttons for contrast */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.6) 75%)" }} />
+          </div>
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 py-2" style={{ gap: sport ? 20 : 26, paddingLeft: sport ? 16 : 24, paddingRight: sport ? 16 : 24 }}>
             {sport ? (
               <div className="flex flex-col gap-3 w-full">
@@ -390,7 +395,7 @@ export default function HomeScreen({
             {pairs(GUIDE).map((col, ci) => (
               <div key={ci} className="flex flex-col gap-4 shrink-0">
                 {col.map(g => (
-                  <button key={g.t} onClick={() => demo(g.t)} className="relative text-left rounded-[12px] shrink-0 flex flex-col justify-between p-3" style={{ width: 300, height: 94, background: "#3a3a3a" }}>
+                  <button key={g.t} onClick={() => demo(g.t)} className="relative text-left rounded-[12px] shrink-0 flex flex-col justify-between p-3" style={{ width: 300, height: 94, background: GLASS_CARD }}>
                     <div className="flex items-start gap-2">
                       <img src={a(`icons/epg/${g.logo}`)} alt="" className="shrink-0 rounded-full" style={{ width: 32, height: 32, objectFit: g.contain ? "contain" : "cover", background: g.contain ? "#fff" : "#404045" }} />
                       <div className="flex-1 min-w-0 flex flex-col">
@@ -532,14 +537,21 @@ function Crest({ item, size }: { item: { t: string; logo?: string; short?: strin
 }
 
 function SportChips({ chip, onPick }: { chip: string; onPick: (c: string) => void }) {
+  return <FilterChips items={SPORT_CHIPS} chip={chip} onPick={onPick} />;
+}
+
+// filter chips (Sport tab, and the TV sub-pages' sub filters): frosted glass when selected
+export function FilterChips({ items, chip, onPick }: { items: string[]; chip: string; onPick: (c: string) => void }) {
   return (
-    <div className="home-rail flex gap-2 overflow-x-auto overflow-y-hidden px-4">
-      {SPORT_CHIPS.map(c => (
+    <div className="home-rail flex gap-2 overflow-x-auto overflow-y-hidden px-4" style={{ scrollbarWidth: "none" }}>
+      {items.map(c => (
         <button key={c} onClick={() => onPick(c)}
           className="shrink-0 rounded-[8px] px-3" style={{
             height: 40, fontSize: 14,
-            background: c === chip ? "#e8e8e8" : "rgba(16,16,16,0.25)", color: c === chip ? "#1c1c1c" : ON_SURFACE,
-            border: c === chip ? "2px solid #fff" : "1.5px solid rgba(255,255,255,0.55)",
+            // selected: the TV's frosted grey-blue glass; idle: its chip fill and border
+            background: c === chip ? PILL : CHIP_BG, color: c === chip ? "#fff" : ON_SURFACE, fontWeight: c === chip ? 600 : 400,
+            boxShadow: c === chip ? PILL_RING : "none", border: c === chip ? "none" : `1px solid ${CHIP_BORDER}`,
+            backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", textShadow: c === chip ? "0 1px 3px rgba(0,0,0,.35)" : "none",
           }}>{c}</button>
       ))}
       <span className="shrink-0" style={{ width: 4 }} />
