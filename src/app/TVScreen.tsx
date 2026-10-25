@@ -1,11 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Cast, Settings, Heart, Pause, Play, PictureInPicture2, Maximize, History } from "lucide-react";
 import iconCrown from "../assets/shorts/crown.svg";
 import iconShare from "../assets/shorts/share-arrow.svg";
 import iconCrownOwned from "../assets/shorts/crown-owned.svg";
 import iconRewind from "../assets/shorts/rewind-10.svg";
 import iconForward from "../assets/shorts/forward-10.svg";
-import { PAGE_BG, BG, PANEL_SOLID, OUTLINE, ON_SURFACE, ON_VARIANT, LIVE, PROGRESS, PILL, PILL_RING, CHIP_BG, CHIP_BORDER, GLASS_CARD_ON } from "./theme";
+import iconFullRewind from "../assets/full/rewind.svg";
+import iconFullForward from "../assets/full/forward.svg";
+import iconBrightness from "../assets/full/brightness.svg";
+import iconVolume from "../assets/full/volume.svg";
+import iconMinimize from "../assets/full/minimize.svg";
+import iconFullPip from "../assets/full/pip.svg";
+import TVShareSheet from "./TVShareSheet";
+import iconBell from "../assets/epg/bell.svg";
+import iconBellOn from "../assets/epg/bell-filled.svg";
+import iconTimeshiftSmall from "../assets/epg/timeshift.svg";
+import { PAGE_BG, BG, PANEL, PANEL_SOLID, OUTLINE, ON_SURFACE, ON_VARIANT, LIVE, PROGRESS, PILL, PILL_RING, CHIP_BG, CHIP_BORDER, GLASS_CARD_ON } from "./theme";
 
 // ─── TV tab (Figma "PLAY-player": Mobile_PortraitPlay_Default_TVonmobile 1871:78141, Sticky Browse CH 1871:78788) ───
 // Live TV on the phone: the channel plays in a 16:9 player pinned under the status bar; below it the programme info
@@ -214,6 +224,86 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
     wake();
   };
 
+  // ── Full screen, landscape (Figma playerLive_landscapeWakeFull 1860:147613) ──
+  // The same player (video, gestures, seek bar, free preview) grows to cover the whole screen with landscape controls.
+  // On a phone held upright it's turned sideways (rotated 90°); turning the phone to landscape enters it by itself,
+  // and where the browser allows, it also goes browser-full-screen and locks to landscape.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState(false);
+  const [area, setArea] = useState({ w: 0, h: 0 });   // the whole app screen: the TV page and the nav under it
+  useLayoutEffect(() => {
+    const el = rootRef.current?.parentElement;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setArea({ w: el.clientWidth, h: el.clientHeight }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const rotated = full && area.h > area.w;
+  // the phone's safe areas (Dynamic Island / notch, home bar), read from a hidden probe; the full-screen player keeps
+  // inside them, black around it. Turned sideways, the top of the phone (the island) is the player's left side.
+  const probe = useRef<HTMLDivElement>(null);
+  const [safe, setSafe] = useState({ t: 0, r: 0, b: 0, l: 0 });
+  useEffect(() => {
+    const read = () => {
+      const cs = probe.current && getComputedStyle(probe.current);
+      if (cs) setSafe({ t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 });
+    };
+    read();
+    addEventListener("resize", read);
+    return () => removeEventListener("resize", read);
+  }, [full]);
+  // mini EPG (Figma Mobile_LandscapeMiniEPG_Default 1860:146306): Browse Channels in full screen shrinks the player to
+  // the top left, with the channel's programmes up next under it and the channel list on the right
+  const [epg, setEpg] = useState(false);
+  // the player's own width / height in full screen, inside the safe areas
+  const localW = rotated ? area.h - safe.t - safe.b : area.w - safe.l - safe.r;
+  const localH = rotated ? area.w - safe.l - safe.r : area.h - safe.t - safe.b;
+  const EPG_W = 280, UPNEXT_H = 79;
+  const boxW = Math.max(0, localW - EPG_W), boxH = Math.max(0, Math.min(boxW * 9 / 16, localH - UPNEXT_H));
+  useEffect(() => { if (!full) { setEpg(false); setSharing(false); } }, [full]);
+  // share in full screen: the same share sheet as the TV page, opened inside the landscape player
+  const [sharing, setSharing] = useState(false);
+  const share = () => { if (full) setSharing(true); else onShare(ch); };
+  const touch = typeof matchMedia !== "undefined" && matchMedia("(pointer: coarse)").matches;
+  const enterFull = () => {
+    setFull(true); wake();
+    if (!touch) return;
+    const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
+    Promise.resolve(el.requestFullscreen?.() ?? el.webkitRequestFullscreen?.())
+      .then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> })?.lock?.("landscape"))
+      .catch(() => {});
+  };
+  const exitFull = () => {
+    setFull(false); wake();
+    try { (screen.orientation as ScreenOrientation & { unlock?: () => void })?.unlock?.(); } catch { /* not supported */ }
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  };
+  // turning a phone to landscape goes full screen, and back to portrait leaves it
+  useEffect(() => {
+    if (!touch) return;
+    const mq = matchMedia("(orientation: landscape)");
+    const on = () => setFull(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => { mq.removeEventListener("change", on); try { (screen.orientation as ScreenOrientation & { unlock?: () => void })?.unlock?.(); } catch { /* */ } };
+  }, []);
+  useEffect(() => {
+    if (!full) return;
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape") exitFull(); };
+    addEventListener("keydown", k);
+    return () => removeEventListener("keydown", k);
+  }, [full]);
+  // how far along an element a touch is, left to right in the player's own terms (turned sideways: top to bottom on
+  // the screen), and up its height for the vertical sliders (turned sideways: right to left)
+  const along = (e: { clientX: number; clientY: number }, r: DOMRect) =>
+    Math.min(1, Math.max(0, rotated ? (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width));
+  const up = (e: { clientX: number; clientY: number }, r: DOMRect) =>
+    Math.min(1, Math.max(0, rotated ? (e.clientX - r.left) / r.width : (r.bottom - e.clientY) / r.height));
+  // brightness (dims the picture) and volume, from the side sliders
+  const [bright, setBright] = useState(1);
+  const [vol, setVol] = useState(1);
+  useEffect(() => { const v = video.current; if (v) { v.volume = vol; if (vol > 0 && full && v.muted) v.muted = false; } }, [vol, cur]);
+
   // ── Time shift: double-tap a side to jump 10s, hold a side to rewind / fast-forward at 2x, drag the seek bar ──
   // Only on channels with time shift; a live-only channel plays at the live edge and none of these respond.
   const seekable = !!ch.timeshift && !!ch.video;
@@ -225,7 +315,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
   const lastTap = useRef<{ t: number; side: -1 | 0 | 1; streak: number }>({ t: 0, side: 0, streak: 0 });
   const singleTap = useRef<ReturnType<typeof setTimeout>>();
   const [tapFx, setTapFx] = useState<{ side: -1 | 1; secs: number; key: number } | null>(null);
-  const sideAt = (clientX: number, el: Element) => { const r = el.getBoundingClientRect(); return (clientX - r.left) / r.width; };
+  const sideAt = (e: { clientX: number; clientY: number }, el: Element) => along(e, el.getBoundingClientRect());
   const skip = (secs: number) => {
     const v = video.current;
     if (v && v.duration) v.currentTime = Math.min(v.duration - 0.1, Math.max(0, v.currentTime + secs));
@@ -248,7 +338,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
   };
   const onPressStart = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!seekable || (e.target as Element).closest("button")) return;
-    const p = { x: e.clientX, y: e.clientY, side: (sideAt(e.clientX, e.currentTarget) < 0.5 ? -1 : 1) as -1 | 1, held: false } as NonNullable<typeof press.current>;
+    const p = { x: e.clientX, y: e.clientY, side: (sideAt(e, e.currentTarget) < 0.5 ? -1 : 1) as -1 | 1, held: false } as NonNullable<typeof press.current>;
     p.timer = setTimeout(() => { p.held = true; startHold(p.side); }, HOLD_MS);
     press.current = p;
   };
@@ -268,8 +358,10 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
     const p = press.current;
     press.current = null;
     if (p?.held) return;                       // the end of a hold, not a tap
+    // mini EPG open: a tap on the picture closes it, back to the full player
+    if (full && epg) { clearTimeout(singleTap.current); setEpg(false); wake(); return; }
     if (!seekable) { toggleControls(); return; }
-    const fx = sideAt(e.clientX, e.currentTarget);
+    const fx = sideAt(e, e.currentTarget);
     const side: -1 | 0 | 1 = fx < 0.4 ? -1 : fx > 0.6 ? 1 : 0;
     const now = e.timeStamp, last = lastTap.current;
     const quick = now - last.t < DOUBLE_TAP_MS && side === last.side && side !== 0;
@@ -292,10 +384,10 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
   // seek bar: drag (or tap) along it to scrub; it thickens, shows a handle and the time, as in the Clips player
   const barRef = useRef<HTMLDivElement>(null);
   const [scrubbing, setScrubbing] = useState(false);
-  const seekTo = (clientX: number) => {
+  const seekTo = (e: { clientX: number; clientY: number }) => {
     const v = video.current, r = barRef.current?.getBoundingClientRect();
     if (!v || !r || !v.duration) return;
-    const f = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+    const f = along(e, r);
     v.currentTime = f * v.duration;
     setTime({ t: v.currentTime, d: v.duration });
   };
@@ -303,9 +395,9 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     setScrubbing(true); setControls(true); clearTimeout(hideAt.current);
-    seekTo(e.clientX);
+    seekTo(e);
   };
-  const onSeekMove = (e: React.PointerEvent) => { if (scrubbing) { e.stopPropagation(); seekTo(e.clientX); } };
+  const onSeekMove = (e: React.PointerEvent) => { if (scrubbing) { e.stopPropagation(); seekTo(e); } };
   const onSeekUp = (e: React.PointerEvent) => { e.stopPropagation(); setScrubbing(false); wake(); };
 
   const leave = () => onBack({ cur, t: video.current?.currentTime ?? 0 });
@@ -347,16 +439,28 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
   const played = time.d ? time.t / time.d : 0;
 
   return (
-    <div className="absolute inset-x-0 top-0 z-[15] flex flex-col" style={{ bottom, background: PAGE_BG, fontFamily: FONT }}>
+    // full screen: above the nav (and the phone frame's status bar)
+    <div ref={rootRef} className="absolute inset-x-0 top-0 flex flex-col" style={{ bottom, zIndex: full ? 60 : 15, background: PAGE_BG, fontFamily: FONT }}>
       {/* status bar area, then the 16:9 player pinned under it */}
       <div className="shrink-0" style={{ height: topInset, background: "#000" }} />
       {/* no overflow clipping and z-10 over the list below, so the seek handle (half below the bottom edge) shows in full */}
-      <div className="relative z-10 w-full shrink-0" style={{ aspectRatio: "16 / 9", background: PANEL_SOLID, touchAction: seekable ? "manipulation" : undefined, userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
+      {/* safe-area probe; and in full screen, black behind the player out to the screen edges */}
+      <div ref={probe} aria-hidden className="absolute pointer-events-none" style={{ visibility: "hidden", paddingTop: "env(safe-area-inset-top, 0px)", paddingRight: "env(safe-area-inset-right, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)", paddingLeft: "env(safe-area-inset-left, 0px)" }} />
+      {full && <div className="absolute left-0 top-0" style={{ width: area.w, height: area.h, background: "#000", zIndex: 29 }} />}
+      {/* full screen: the whole app screen inside its safe areas (turned sideways on an upright phone) */}
+      <div className="relative z-10 w-full shrink-0" style={{
+        ...(full
+          ? { position: "absolute", zIndex: 30, width: localW, height: localH, background: "#000", transformOrigin: "0 0",
+              ...(rotated
+                ? { top: 0, left: 0, transform: `translate(${area.w - safe.r}px, ${safe.t}px) rotate(90deg)` }
+                : { top: safe.t, left: safe.l, transform: "none" }) }
+          : { aspectRatio: "16 / 9", background: PANEL_SOLID }),
+        touchAction: seekable ? "manipulation" : undefined, userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
         onClick={onTap} onPointerDown={onPressStart} onPointerMove={onPressMove} onPointerUp={onPressEnd} onPointerCancel={onPressEnd} onPointerLeave={onPressEnd}
         onContextMenu={e => { if (seekable) e.preventDefault(); }}>
         {ch.video
           ? <video key={ch.video} ref={video} src={ch.video} poster={ch.poster} autoPlay loop muted={muted} playsInline
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute" style={{ ...(full && epg ? { left: 0, top: 0, width: boxW, height: boxH } : { inset: 0, width: "100%", height: "100%" }), objectFit: full ? "contain" : "cover", filter: bright < 1 ? `brightness(${bright})` : undefined }}
               onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onPlaying={() => setStarted(true)}
               onLoadedMetadata={e => {
                 const v = e.currentTarget;
@@ -364,10 +468,26 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
                 setTime({ t: v.currentTime, d: v.duration || 0 });
               }}
               onTimeUpdate={e => setTime({ t: e.currentTarget.currentTime, d: e.currentTarget.duration || 0 })} />
-          : <img key={ch.poster} src={ch.poster} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+          : <img key={ch.poster} src={ch.poster} alt="" className="absolute" style={{ ...(full && epg ? { left: 0, top: 0, width: boxW, height: boxH } : { inset: 0, width: "100%", height: "100%" }), objectFit: full ? "contain" : "cover", filter: bright < 1 ? `brightness(${bright})` : undefined }} />}
 
+        {full && epg && (
+          <MiniEpg ch={ch} cur={cur} boxW={boxW} boxH={boxH} panelW={EPG_W} playing={playing} seekable={seekable} started={started} t={time.t}
+            played={played} scrubbing={scrubbing} fav={fav} barRef={barRef} recent={recent} favs={favs}
+            onBack={() => setEpg(false)} onFav={toggleFav} onShare={share} onDemo={demo} onToast={onToast}
+            onPip={() => { exitFull(); leave(); }} onMinimize={exitFull} onPick={pick}
+            onSeekDown={onSeekDown} onSeekMove={onSeekMove} onSeekUp={onSeekUp} />
+        )}
+        {full && !epg && (
+          <FullControls ch={ch} shown={controls} playing={playing} seekable={seekable} started={started} t={time.t} played={played}
+            scrubbing={scrubbing} fav={fav} bright={bright} vol={vol} up={up} barRef={barRef}
+            onBack={exitFull} onFav={toggleFav} onShare={share} onDemo={demo}
+            onSkip={secs => { skip(secs); setTapFx({ side: secs < 0 ? -1 : 1, secs: Math.abs(secs), key: Date.now() }); wake(); }}
+            onPlay={togglePlay} onBrowse={() => setEpg(true)} onPip={() => { exitFull(); leave(); }} onMinimize={exitFull}
+            onBright={b => { setBright(b); clearTimeout(hideAt.current); }} onVol={v => { setVol(v); clearTimeout(hideAt.current); }} onSlideEnd={wake}
+            onSeekDown={onSeekDown} onSeekMove={onSeekMove} onSeekUp={onSeekUp} />
+        )}
         {/* controls: top and bottom scrims with the player chrome, faded out while watching */}
-        <div className="absolute inset-0 transition-opacity duration-300" style={{ opacity: controls ? 1 : 0, pointerEvents: controls ? "auto" : "none" }}>
+        {!full && <div className="absolute inset-0 transition-opacity duration-300" style={{ opacity: controls ? 1 : 0, pointerEvents: controls ? "auto" : "none" }}>
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 33%), linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.9) 100%)" }} />
           <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
             <button onClick={e => { e.stopPropagation(); leave(); }} aria-label="Back"><ChevronLeft size={24} color="#fff" /></button>
@@ -389,23 +509,26 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
               </div>
               <div className="flex items-center gap-4">
                 <button onClick={e => { e.stopPropagation(); leave(); }} aria-label="Picture in picture"><PictureInPicture2 size={24} color="#fff" /></button>
-                <button onClick={e => { e.stopPropagation(); demo("Full screen"); }} aria-label="Full screen"><Maximize size={24} color="#fff" /></button>
+                <button onClick={e => { e.stopPropagation(); enterFull(); }} aria-label="Full screen"><Maximize size={24} color="#fff" /></button>
               </div>
             </div>
           </div>
-        </div>
+        </div>}
         {/* free preview / Explore Package: stays on screen while the rest of the controls are hidden, sliding down
             to 8px above the 3px seek bar */}
-        {ch.premium && !ch.owned && (
+        {ch.premium && !ch.owned && !(full && epg) && (
           <div className="absolute inset-x-0 flex items-end justify-between px-4 pb-2"
-            style={{ bottom: 7 + 32, transform: controls ? "none" : "translateY(36px)", transition: "transform .3s cubic-bezier(.2,0,0,1)" }}>
-            <span className="flex items-center gap-2 rounded-[4px] px-2" style={{ height: 32, fontSize: 10, background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.25)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+            // full screen: 16px above the seek line (its top is 69px up: 16 padding + 40 row + 7 of its 20px box)
+            style={full
+              ? { bottom: controls ? 77 : 8, paddingLeft: 44, paddingRight: 32, transition: "bottom .3s cubic-bezier(.2,0,0,1)" }
+              : { bottom: 7 + 32, transform: controls ? "none" : "translateY(36px)", transition: "transform .3s cubic-bezier(.2,0,0,1)" }}>
+            <span className="flex items-center gap-2 rounded-[4px]" style={{ height: full ? 40 : 32, padding: full ? "0 12px" : "0 8px", fontSize: full ? 14 : 10, background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.25)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
               <span style={{ color: ON_VARIANT }}>Free preview</span>
               <span style={{ color: ON_SURFACE, fontWeight: 600 }}>• {fmt(preview)} minutes left</span>
             </span>
             <button onClick={e => { e.stopPropagation(); demo("Explore Package"); }}
-              className="flex items-center gap-1 rounded-[4px] px-2" style={{ height: 32, background: PILL, boxShadow: PILL_RING, color: "#fff", fontSize: 10, fontWeight: 600, textShadow: "0 1px 3px rgba(0,0,0,.35)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
-              <img src={iconCrown} alt="" style={{ width: 14, height: 14, filter: "brightness(0)" }} />Explore Package
+              className="flex items-center gap-1 rounded-[4px]" style={{ height: full ? 40 : 32, padding: full ? "0 12px" : "0 8px", background: PILL, boxShadow: PILL_RING, color: "#fff", fontSize: full ? 14 : 10, fontWeight: 600, textShadow: "0 1px 3px rgba(0,0,0,.35)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+              <img src={iconCrown} alt="" style={{ width: full ? 18 : 14, height: full ? 18 : 14, filter: "brightness(0)" }} />Explore Package
             </button>
           </div>
         )}
@@ -429,13 +552,14 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
         )}
         {/* scrubbing: the time, large, in the middle of the picture */}
         {scrubbing && (
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white tabular-nums pointer-events-none"
-            style={{ fontSize: 24, fontWeight: 600, textShadow: "0 2px 8px rgba(0,0,0,0.6)" }}>
+          // full screen: above the play / pause ring (its top is 40px over the middle), so it doesn't sit on it
+          <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 text-white tabular-nums pointer-events-none whitespace-nowrap"
+            style={{ top: full ? "calc(50% - 72px)" : "50%", fontSize: 24, fontWeight: 600, textShadow: "0 2px 8px rgba(0,0,0,0.6)" }}>
             {fmt(time.t)} <span style={{ color: ON_VARIANT }}>/ {fmt(time.d)}</span>
           </span>
         )}
         {/* seek bar along the player's bottom edge: draggable with time shift; a live-only channel sits at the live edge */}
-        {seekable ? (
+        {full ? null : seekable ? (
           // 47px touch area around the 3px line: 10px above it (clear of the icon row) and 34px below it (over the
           // programme title's top padding, which has nothing to tap)
           <div className="absolute inset-x-0 flex items-start" style={{ bottom: -34, height: 10 + 3 + 34, paddingTop: 10, touchAction: "none" }}
@@ -455,6 +579,9 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
         ) : (
           <div className="absolute inset-x-0 bottom-0 h-[3px]" style={{ background: PROGRESS }} />
         )}
+        {full && sharing && <LandscapeSheet onClose={() => setSharing(false)}>
+          {close => <TVShareSheet ch={ch} onClose={close} onDone={msg => { close(); onToast(msg); }} />}
+        </LandscapeSheet>}
       </div>
 
       <div ref={scroller} className="relative flex-1 overflow-y-auto overflow-x-hidden tv-scroll">
@@ -576,5 +703,285 @@ export function ChannelLogo({ c, size }: { c: Channel; size: number }) {
     <span className="shrink-0 overflow-hidden rounded-full flex items-center justify-center" style={{ width: size, height: size, background: c.contain || c.round ? "#fff" : "#404045" }}>
       <img src={c.logo} alt="" className="w-full h-full" style={{ objectFit: c.contain ? "contain" : "cover", padding: c.contain ? size * 0.08 : 0, transform: c.round ? "scale(1.06)" : undefined }} />
     </span>
+  );
+}
+
+// ─── Full-screen landscape controls (Figma playerLive_landscapeWakeFull) ───────────────────────────────────────────
+// Top: back, the channel (logo, programme, name, crown, number) and heart / share / cast / settings. Middle: −10s,
+// play / pause in an 80px ring, +10s (the skips on a time-shift channel only). Sides: brightness and volume sliders.
+// Bottom: the seek bar (draggable with time shift), the time, Browse Channels, PiP and leave full screen.
+type Pt = { clientX: number; clientY: number };
+function FullControls(p: {
+  ch: Channel; shown: boolean; playing: boolean; seekable: boolean; started: boolean; t: number; played: number; scrubbing: boolean;
+  fav: boolean; bright: number; vol: number; up: (e: Pt, r: DOMRect) => number; barRef: React.RefObject<HTMLDivElement>;
+  onBack: () => void; onFav: () => void; onShare: () => void; onDemo: (label: string) => void; onSkip: (secs: number) => void;
+  onPlay: () => void; onBrowse: () => void; onPip: () => void; onMinimize: () => void;
+  onBright: (v: number) => void; onVol: (v: number) => void; onSlideEnd: () => void;
+  onSeekDown: (e: React.PointerEvent<HTMLDivElement>) => void; onSeekMove: (e: React.PointerEvent) => void; onSeekUp: (e: React.PointerEvent) => void;
+}) {
+  const stop = (fn: () => void) => (e: React.MouseEvent) => { e.stopPropagation(); fn(); };
+  const icon40 = "w-10 h-10 rounded-full flex items-center justify-center shrink-0";
+  return (
+    <div className="absolute inset-0 transition-opacity duration-300" style={{ opacity: p.shown ? 1 : 0, pointerEvents: p.shown ? "auto" : "none" }}>
+      {/* player fade: dark at the top and the bottom */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 30%), linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.9) 100%)" }} />
+
+      {/* top bar */}
+      <div className="absolute inset-x-0 top-0 flex items-start justify-between" style={{ padding: "16px 32px 8px 44px" }}>
+        <div className="flex items-start gap-2 min-w-0">
+          <button onClick={stop(p.onBack)} aria-label="Leave full screen" className={icon40} style={{ width: 40, height: 40 }}><ChevronLeft size={24} color="#fff" /></button>
+          <div className="flex items-center gap-2 pr-4 min-w-0">
+            <ChannelLogo c={p.ch} size={32} />
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className="truncate" style={{ fontSize: 14, fontWeight: 600, color: ON_SURFACE, maxWidth: 360 }}>{p.ch.program}</span>
+              <span className="flex items-center gap-[6px]">
+                <span className="truncate" style={{ fontSize: 12, color: ON_SURFACE }}>{p.ch.name}</span>
+                {p.ch.premium && <Crown c={p.ch} size={16} />}
+                <span className="rounded-[4px] px-2 text-center text-white" style={{ minWidth: 40, fontSize: 12, lineHeight: "20px", fontWeight: 500, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{p.ch.no}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 pl-4">
+          <button onClick={stop(p.onFav)} aria-label={p.fav ? "Remove from favorites" : "Add to favorites"} aria-pressed={p.fav} className={icon40}>
+            <Heart size={24} color={p.fav ? LIVE : "#fff"} fill={p.fav ? LIVE : "none"} className={p.fav ? "tv-like-pop" : undefined} />
+          </button>
+          <button onClick={stop(p.onShare)} aria-label="Share" className={icon40}><img src={iconShare} alt="" width={24} height={24} /></button>
+          <button onClick={stop(() => p.onDemo("Cast"))} aria-label="Cast" className={icon40}><Cast size={24} color="#fff" /></button>
+          <button onClick={stop(() => p.onDemo("Settings"))} aria-label="Settings" className={icon40}><Settings size={24} color="#fff" /></button>
+        </div>
+      </div>
+
+      {/* middle: −10s, play / pause, +10s, 80px apart */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center" style={{ gap: 80 }}>
+        {p.seekable && (
+          <button onClick={stop(() => p.onSkip(-10))} aria-label="Back 10 seconds" className="rounded-full p-2" style={{ background: "rgba(0,0,0,0.6)" }}>
+            <img src={iconFullRewind} alt="" width={32} height={32} className="block" />
+          </button>
+        )}
+        <button onClick={stop(p.onPlay)} aria-label={p.playing ? "Pause" : "Play"} className="rounded-full flex items-center justify-center"
+          style={{ width: 80, height: 80, background: "rgba(0,0,0,0.45)", boxShadow: "inset 0 0 0 3px #fff" }}>
+          {p.playing ? <Pause size={34} color="#fff" fill="#fff" /> : <Play size={34} color="#fff" fill="#fff" style={{ marginLeft: 4 }} />}
+        </button>
+        {p.seekable && (
+          <button onClick={stop(() => p.onSkip(10))} aria-label="Forward 10 seconds" className="rounded-full p-2" style={{ background: "rgba(0,0,0,0.6)" }}>
+            <img src={iconFullForward} alt="" width={32} height={32} className="block" />
+          </button>
+        )}
+      </div>
+
+      {/* sides: brightness (left), volume (right) */}
+      <VSlider side="left" icon={iconBrightness} label="Brightness" value={(p.bright - 0.2) / 0.8} up={p.up} onChange={v => p.onBright(0.2 + v * 0.8)} onEnd={p.onSlideEnd} />
+      <VSlider side="right" icon={iconVolume} label="Volume" value={p.vol} up={p.up} onChange={p.onVol} onEnd={p.onSlideEnd} />
+
+      {/* bottom: seek bar, then time + Browse Channels / PiP / leave full screen */}
+      <div className="absolute inset-x-0 bottom-0 flex flex-col" style={{ padding: "16px 32px 16px 44px" }}>
+        {p.seekable ? (
+          <div className="relative flex items-center" style={{ height: 20, touchAction: "none" }}
+            onPointerDown={p.onSeekDown} onPointerMove={p.onSeekMove} onPointerUp={p.onSeekUp} onPointerCancel={p.onSeekUp} onClick={e => e.stopPropagation()}>
+            <div ref={p.barRef} className="relative w-full rounded-full" style={{ height: 6, background: "#4a4a4a" }}>
+              <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${p.played * 100}%`, background: PROGRESS }} />
+              <span className="absolute top-1/2 rounded-full" style={{
+                left: `clamp(7px, ${p.played * 100}%, calc(100% - 7px))`, width: 14, height: 14, background: "#fff", border: "2px solid #fff",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.25)", transform: `translate(-50%, -50%) scale(${p.scrubbing ? 1.15 : 1})`, transition: "transform .15s ease",
+              }} />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center" style={{ height: 20 }}><div className="w-full rounded-full" style={{ height: 6, background: PROGRESS }} /></div>
+        )}
+        <div className="flex items-center justify-between">
+          <span style={{ fontSize: 14, lineHeight: "18px", color: ON_VARIANT, fontVariantNumeric: "tabular-nums" }}>{p.started ? elapsed(p.t) : ""}</span>
+          <div className="flex items-center gap-2">
+            <button onClick={stop(p.onBrowse)} className="rounded-[4px] px-3" style={{ minHeight: 32, fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>Browse Channels</button>
+            <button onClick={stop(p.onPip)} aria-label="Picture in picture" className={icon40}><img src={iconFullPip} alt="" width={24} height={24} /></button>
+            <button onClick={stop(p.onMinimize)} aria-label="Leave full screen" className={icon40}><img src={iconMinimize} alt="" width={24} height={24} /></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// a vertical slider at the side of the full-screen player: a 24px icon over a 128px track, filled from the bottom
+function VSlider({ side, icon, label, value, up, onChange, onEnd }: {
+  side: "left" | "right"; icon: string; label: string; value: number; up: (e: Pt, r: DOMRect) => number;
+  onChange: (v: number) => void; onEnd: () => void;
+}) {
+  const track = useRef<HTMLDivElement>(null);
+  const set = (e: Pt) => { const r = track.current?.getBoundingClientRect(); if (r) onChange(up(e, r)); };
+  const v = Math.min(1, Math.max(0, value));
+  return (
+    <div className="absolute flex flex-col items-center gap-2" style={{ [side]: 44, top: "calc(50% - 30px)", transform: "translateY(-50%)", width: 48, height: 160 }}
+      onClick={e => e.stopPropagation()}>
+      <img src={icon} alt="" width={24} height={24} />
+      <div role="slider" aria-label={label} aria-valuenow={Math.round(v * 100)} aria-valuemin={0} aria-valuemax={100}
+        className="relative flex-1 flex justify-center" style={{ width: 44, touchAction: "none" }}
+        onPointerDown={e => { e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId); set(e); }}
+        onPointerMove={e => { if (e.buttons || e.pointerType === "touch") { e.stopPropagation(); if (e.currentTarget.hasPointerCapture(e.pointerId)) set(e); } }}
+        onPointerUp={e => { e.stopPropagation(); onEnd(); }}>
+        <div ref={track} className="relative h-full rounded-full" style={{ width: 6, background: "rgba(235,235,235,0.35)", boxShadow: "0 1px 1px rgba(0,0,0,0.25)" }}>
+          <div className="absolute inset-x-0 bottom-0 rounded-full" style={{ height: `${v * 100}%`, background: "#ebebeb" }} />
+          <div className="absolute left-1/2 -translate-x-1/2 rounded-full" style={{ bottom: `calc(${v * 100}% + 3px)`, width: 16, height: 3, background: "#ebebeb" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mini EPG, full-screen landscape (Figma Mobile_LandscapeMiniEPG_Default) ──────────────────────────────────────
+// The player in a box at the top left with its controls (back to the full player; heart / share / cast / settings;
+// seek bar, time, PiP, leave full screen); under it "Up Next:", the channel's programmes (the one on air outlined,
+// later ones with a reminder bell); on the right the category tabs and the channel list — the same channels, tab,
+// crowns, time shift and "Watching" tag as the TV page. Tapping a channel switches to it here.
+function MiniEpg(p: {
+  ch: Channel; cur: number; boxW: number; boxH: number; panelW: number; playing: boolean; seekable: boolean; started: boolean;
+  t: number; played: number; scrubbing: boolean; fav: boolean; barRef: React.RefObject<HTMLDivElement>; recent: number[]; favs: Set<number>;
+  onBack: () => void; onFav: () => void; onShare: () => void; onDemo: (label: string) => void; onToast: (msg: string) => void;
+  onPip: () => void; onMinimize: () => void; onPick: (i: number) => void;
+  onSeekDown: (e: React.PointerEvent<HTMLDivElement>) => void; onSeekMove: (e: React.PointerEvent) => void; onSeekUp: (e: React.PointerEvent) => void;
+}) {
+  const [cat, setCatState] = useState(tvStore.cat);
+  const setCat = (c: string) => { tvStore.cat = c; setCatState(c); };
+  const list = useMemo(() => channelsFor(cat, p.recent, p.favs), [cat, p.recent, p.favs]);
+  const now = nowMinutes();
+  const shows = useMemo(() => scheduleFor(p.cur).filter(x => x.end > now), [p.cur, now]);
+  const [reminders, setReminders] = useState(() => new Set(tvStore.reminders));
+  const [rung, setRung] = useState<string | null>(null);
+  const remind = (x: Programme) => {
+    const key = `${p.cur}-${x.start}`, on = !reminders.has(key);
+    const next = new Set(reminders); on ? next.add(key) : next.delete(key);
+    tvStore.reminders = next; setReminders(next); setRung(on ? key : null);
+    p.onToast(on ? `Reminder set: ${x.title} at ${clock(x.start)}` : `Reminder removed: ${x.title}`);
+  };
+  // the list starts at the channel playing
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { listRef.current?.querySelector<HTMLElement>("[data-watching]")?.scrollIntoView({ block: "center" }); }, []);
+  // taps in the panel and the up-next row belong to them, not to the player's tap / hold gestures
+  const keep = { onClick: (e: React.MouseEvent) => e.stopPropagation(), onPointerDown: (e: React.PointerEvent) => e.stopPropagation() };
+  const stop = (fn: () => void) => (e: React.MouseEvent) => { e.stopPropagation(); fn(); };
+  const icon40 = "w-10 h-10 rounded-full flex items-center justify-center shrink-0";
+
+  return (
+    <>
+      {/* player box controls */}
+      <div className="absolute left-0 top-0" style={{ width: p.boxW, height: p.boxH }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 30%), linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.85) 100%)" }} />
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 py-3">
+          <button onClick={stop(p.onBack)} aria-label="Back to the player" className={icon40}><ChevronLeft size={24} color="#fff" /></button>
+          <div className="flex items-center gap-2">
+            <button onClick={stop(p.onFav)} aria-label={p.fav ? "Remove from favorites" : "Add to favorites"} aria-pressed={p.fav} className={icon40}>
+              <Heart size={24} color={p.fav ? LIVE : "#fff"} fill={p.fav ? LIVE : "none"} />
+            </button>
+            <button onClick={stop(p.onShare)} aria-label="Share" className={icon40}><img src={iconShare} alt="" width={24} height={24} /></button>
+            <button onClick={stop(() => p.onDemo("Cast"))} aria-label="Cast" className={icon40}><Cast size={24} color="#fff" /></button>
+            <button onClick={stop(() => p.onDemo("Settings"))} aria-label="Settings" className={icon40}><Settings size={24} color="#fff" /></button>
+          </div>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 flex flex-col px-4">
+          {p.seekable ? (
+            <div className="relative flex items-center" style={{ height: 20, touchAction: "none" }}
+              onPointerDown={p.onSeekDown} onPointerMove={p.onSeekMove} onPointerUp={p.onSeekUp} onPointerCancel={p.onSeekUp} onClick={e => e.stopPropagation()}>
+              <div ref={p.barRef} className="relative w-full rounded-full" style={{ height: 6, background: "#4a4a4a" }}>
+                <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${p.played * 100}%`, background: PROGRESS }} />
+                <span className="absolute top-1/2 rounded-full" style={{ left: `clamp(7px, ${p.played * 100}%, calc(100% - 7px))`, width: 14, height: 14, background: "#fff", boxShadow: "0 2px 6px rgba(0,0,0,0.25)", transform: `translate(-50%, -50%) scale(${p.scrubbing ? 1.15 : 1})` }} />
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center" style={{ height: 20 }}><div className="w-full rounded-full" style={{ height: 6, background: PROGRESS }} /></div>
+          )}
+          <div className="flex items-center justify-between">
+            <span style={{ fontSize: 14, lineHeight: "18px", color: ON_SURFACE, fontVariantNumeric: "tabular-nums" }}>{p.started ? elapsed(p.t) : ""}</span>
+            <div className="flex items-center gap-2">
+              <button onClick={stop(p.onPip)} aria-label="Picture in picture" className={icon40}><img src={iconFullPip} alt="" width={24} height={24} /></button>
+              <button onClick={stop(p.onMinimize)} aria-label="Leave full screen" className={icon40}><img src={iconMinimize} alt="" width={24} height={24} /></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* up next: this channel's programmes */}
+      <div className="absolute left-0 bottom-0 flex items-center gap-2 pl-4" style={{ width: p.boxW, top: p.boxH, background: BG }} {...keep}>
+        <span className="shrink-0" style={{ fontSize: 10, fontWeight: 700, color: "#fff", letterSpacing: -0.2 }}>Up Next:</span>
+        <div className="tv-rail flex gap-2 overflow-x-auto pr-4 py-2">
+          {shows.map((x, k) => {
+            const onAir = k === 0 && x.start <= now, key = `${p.cur}-${x.start}`, reminded = reminders.has(key);
+            return (
+              <button key={x.start} onClick={() => (onAir ? p.onBack() : remind(x))} className="shrink-0 flex flex-col justify-center gap-1 rounded-[8px] px-2 py-1 text-left"
+                style={{ width: 200, height: 56, background: onAir ? "rgba(255,255,255,0.17)" : "rgba(255,255,255,0.08)", border: onAir ? "1px solid #5a5a5a" : "1px solid transparent" }}>
+                <span className="truncate w-full" style={{ fontSize: 14, lineHeight: "18px", color: ON_SURFACE }}>{x.title}</span>
+                <span className="flex items-center justify-between w-full">
+                  <span style={{ fontSize: 12, color: ON_VARIANT }}>{clock(x.start)} - {clock(x.end)}</span>
+                  <span className="flex items-center gap-3">
+                    {p.ch.timeshift && <img src={iconTimeshiftSmall} alt="Time shift" width={16} height={16} />}
+                    {!onAir && <img key={reminded ? `on-${key === rung}` : "off"} src={reminded ? iconBellOn : iconBell} alt={reminded ? "Reminder set" : "Add reminder"} width={16} height={16} className={reminded && key === rung ? "tv-ring" : undefined} />}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* channel list */}
+      <div className="absolute right-0 top-0 bottom-0 flex flex-col" style={{ width: p.panelW, background: "#0d141d" }} {...keep}>
+        <div className="relative shrink-0" style={{ borderBottom: `1px solid ${OUTLINE}` }}>
+          <div className="tv-rail flex gap-2 overflow-x-auto px-4">
+            {CATEGORIES.map(c => (
+              <button key={c} onClick={() => setCat(c)} className="relative shrink-0 px-2 pt-3 pb-[10px] outline-none">
+                <span className="whitespace-nowrap" style={{ fontSize: 16, fontWeight: c === cat ? 700 : 400, color: c === cat ? "#fff" : ON_SURFACE }}>{c}</span>
+                {c === cat && <span className="absolute left-2 right-2 bottom-0 h-[3px] rounded-[1.5px] bg-white" />}
+              </button>
+            ))}
+            <span className="shrink-0" style={{ width: 40 }} />
+          </div>
+          {/* the tabs fade out at the right edge */}
+          <div className="absolute right-0 top-0 bottom-0 pointer-events-none" style={{ width: 56, background: "linear-gradient(270deg, #0d141d 22%, rgba(13,20,29,0))" }} />
+        </div>
+        <div ref={listRef} className="tv-scroll flex-1 overflow-y-auto pb-8">
+          {list.length === 0 && <p className="m-0 p-6 text-center" style={{ fontSize: 14, color: ON_VARIANT }}>No channels here yet</p>}
+          {list.map(({ c, i }) => {
+            const on = i === p.cur;
+            return (
+              <button key={`${cat}-${i}`} onClick={() => p.onPick(i)} data-watching={on || undefined} className="w-full flex items-center gap-2 text-left"
+                style={{ padding: "16px 16px 16px 12px", background: on ? GLASS_CARD_ON : "transparent" }}>
+                <ChannelLogo c={c} size={40} />
+                <div className="flex flex-1 flex-col gap-[2px] min-w-0">
+                  <span className="truncate" style={{ fontSize: 14, lineHeight: "18px", color: ON_SURFACE }}>{c.program}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {c.premium && <Crown c={c} size={16} />}
+                    <span className="shrink-0 rounded-[4px] px-1 text-center text-white" style={{ minWidth: 28, fontSize: 10, lineHeight: "20px", fontWeight: 600, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{c.no}</span>
+                    <span className="shrink-0" style={{ width: 1, height: 14, background: "#4a4a4a" }} />
+                    <span className="truncate" style={{ fontSize: 12, color: ON_VARIANT }}>{c.name}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end justify-between shrink-0 self-stretch" style={{ width: on ? 54 : 26 }}>
+                  {c.timeshift ? <History size={16} color={ON_VARIANT} /> : <span />}
+                  {on && <span className="flex items-center justify-center rounded-[2px]" style={{ height: 16, padding: "0 4px", fontSize: 10, fontWeight: 600, background: "#59d478", color: "#0b2a14" }}>Watching</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <style>{`.tv-ring{transform-origin:50% 10%;animation:tv-ring .7s ease-out}@keyframes tv-ring{0%{transform:scale(.6) rotate(0)}15%{transform:scale(1.25) rotate(18deg)}30%{transform:scale(1.1) rotate(-16deg)}45%{transform:scale(1) rotate(12deg)}60%{transform:rotate(-8deg)}75%{transform:rotate(4deg)}100%{transform:rotate(0)}}`}</style>
+    </>
+  );
+}
+
+// a bottom sheet inside the landscape player: dimmed picture, the sheet rising from the bottom edge (480px wide,
+// centred, scrolling if it's taller than the screen); taps stay in it, not on the player's gestures
+function LandscapeSheet({ onClose, children }: { onClose: () => void; children: (close: () => void) => React.ReactNode }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => { requestAnimationFrame(() => setShown(true)); }, []);
+  const close = () => { setShown(false); setTimeout(onClose, 250); };
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-end" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+      <div className="absolute inset-0 transition-opacity duration-200" style={{ background: "rgba(0,0,0,0.6)", opacity: shown ? 1 : 0 }} onClick={close} />
+      <div className="relative w-full overflow-y-auto rounded-t-[16px] transition-transform duration-300 tv-scroll"
+        style={{ maxWidth: 480, maxHeight: "100%", background: PANEL, transform: shown ? "translateY(0)" : "translateY(100%)", transitionTimingFunction: "cubic-bezier(.2,0,0,1)" }}>
+        {children(close)}
+      </div>
+    </div>
   );
 }
