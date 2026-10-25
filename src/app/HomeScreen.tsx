@@ -210,8 +210,8 @@ export default function HomeScreen({
         <div ref={logoRowRef} className="relative flex items-center justify-between px-4" style={{ height: 64 }}>
           <div className="relative flex items-center" style={{ height: 32 }}>
             {/* the app logo, also while the compact header is expanded (tapping it then collapses it again) */}
-            <span onClick={() => { if (compact) setMenuOpen(false); }} className="text-white transition-all duration-300"
-              style={{ fontSize: 20, fontWeight: 800, letterSpacing: 0.5, opacity: titleOn ? 0 : 1, transform: titleOn ? "translateY(-8px)" : "none", pointerEvents: titleOn ? "none" : "auto" }}>AIS <span style={{ color: "#b8f416" }}>PLAY</span></span>
+            <img src={a("badges/logo app/logoapp-cropped.png")} alt="AIS PLAY" onClick={() => { if (compact) setMenuOpen(false); }} className="block transition-all duration-300"
+              style={{ height: 24, width: "auto", opacity: titleOn ? 0 : 1, transform: titleOn ? "translateY(-8px)" : "none", pointerEvents: titleOn ? "none" : "auto" }} />
             <button onClick={() => { setChipsFolded(false); setMenuOpen(true); }} aria-expanded={menuOpen} aria-label={`${tab}: show sections`}
               className="absolute left-0 top-1/2 flex items-center gap-2 transition-all duration-300 whitespace-nowrap"
               style={{ opacity: titleOn ? 1 : 0, transform: `translateY(${titleOn ? "-50%" : "calc(-50% + 8px)"})`, pointerEvents: titleOn ? "auto" : "none" }}>

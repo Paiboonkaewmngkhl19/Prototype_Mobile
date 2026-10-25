@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { motion, AnimatePresence, animate, useMotionValue } from "motion/react";
 import {
@@ -332,6 +332,17 @@ export default function App() {
     mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   }, []);
+  // iOS home-screen app with a translucent status bar: the page gets the screen height minus the status bar
+  // (e.g. 873 of 932px) yet starts at the very top, leaving an empty strip under the nav. Stretch by that amount.
+  const [iosGap, setIosGap] = useState(0);
+  useEffect(() => {
+    const standalone = matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
+    if (!standalone) return;
+    const read = () => setIosGap(innerHeight > innerWidth ? Math.max(0, screen.height - innerHeight) : 0);
+    read();
+    addEventListener("resize", read);
+    return () => removeEventListener("resize", read);
+  }, []);
   const [liked, setLiked] = useState<Set<number>>(new Set());
   const [saved, setSaved] = useState<Set<number>>(new Set());
   const [reminded, setReminded] = useState<Set<number>>(new Set());
@@ -472,7 +483,9 @@ export default function App() {
 
   // space below the tab row: 24px, or the phone's own home-bar area if that's taller
   const navBottom = isPhone ? `max(${INDICATOR_H}px, env(safe-area-inset-bottom, 0px))` : `${INDICATOR_H}px`;
-  const feedBottom = `calc(${NAV_H}px + ${navBottom})`;
+  // on a phone the nav sizes to its content (labels sit right at the screen edge), so its height is measured
+  const [phoneNavH, setPhoneNavH] = useState(65);
+  const feedBottom = isPhone ? `${phoneNavH}px` : `calc(${NAV_H}px + ${navBottom})`;
 
   const screenBody = (
     <>
@@ -554,6 +567,8 @@ export default function App() {
             <BottomNav
               bottom={navBottom}
               indicator={!isPhone}
+              phone={isPhone}
+              onHeight={setPhoneNavH}
               active={tab}
               onTab={label => { if (label === "Home" || label === "Clips") setTab(label); else toast(`${label} (demo)`); }}
             />
@@ -667,7 +682,7 @@ export default function App() {
 
   if (isPhone) {
     return (
-      <div className="fixed inset-0 overflow-hidden bg-black" onPointerDownCapture={unmute} onKeyDownCapture={unmute}>
+      <div className="fixed inset-x-0 top-0 overflow-hidden bg-black" style={{ height: `calc(100% + ${iosGap}px)` }} onPointerDownCapture={unmute} onKeyDownCapture={unmute}>
         {screenBody}
       </div>
     );
@@ -1343,24 +1358,35 @@ const NAV_TABS = [
   { label: "Profile", avatar: avatarUser },
 ];
 
-function BottomNav({ bottom, indicator, active, onTab }: { bottom: string; indicator: boolean; active: string; onTab: (label: string) => void }) {
+function BottomNav({ bottom, indicator, phone, onHeight, active, onTab }: {
+  bottom: string; indicator: boolean; phone: boolean; onHeight: (h: number) => void; active: string; onTab: (label: string) => void;
+}) {
+  // phone: no fixed row height; 12px above the icons (as in the 76px row) and no space below the labels.
+  // The page reads the resulting height to stop above it.
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!phone || !el) return;
+    const ro = new ResizeObserver(() => onHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [phone, onHeight]);
   return (
     <div
+      ref={ref}
       className="absolute left-0 right-0 bottom-0 z-20 flex flex-col"
-      style={{ background: "#101010", borderTop: "1px solid #282e38", filter: "drop-shadow(0 -8px 12px rgba(0,0,0,0.33))", paddingBottom: bottom }}
+      style={{ background: "#101010", borderTop: "1px solid #282e38", filter: "drop-shadow(0 -8px 12px rgba(0,0,0,0.33))", paddingBottom: phone ? 0 : bottom }}
     >
-      <div className="flex items-center w-full" style={{ height: NAV_H }}>
+      <div className="flex items-center w-full" style={phone ? { paddingTop: 12 } : { height: NAV_H }}>
         {NAV_TABS.map(tb => ({ ...tb, active: tb.label === active })).map(t => (
           <button
             key={t.label}
             onClick={() => { if (!t.active) onTab(t.label); }}
-            className="flex-1 h-16 flex flex-col items-center justify-center gap-1"
+            className={`flex-1 flex flex-col items-center justify-center gap-1 ${phone ? "" : "h-16"}`}
           >
-            <span className="w-10 h-9 rounded-[12px] flex items-center justify-center">
-              {t.avatar
-                ? <img src={t.avatar} alt="" className="w-6 h-6 rounded-full object-cover" style={{ background: "#404045" }} />
-                : <img src={t.active && t.activeIcon ? t.activeIcon : t.icon} alt="" className="w-6 h-6 block" />}
-            </span>
+            {t.avatar
+              ? <img src={t.avatar} alt="" className="w-6 h-6 rounded-full object-cover block" style={{ background: "#404045" }} />
+              : <img src={t.active && t.activeIcon ? t.activeIcon : t.icon} alt="" className="w-6 h-6 block" />}
             <span className="text-[11px] leading-[1.15]" style={{ color: t.active ? "#e8e8e8" : "#a8a8a8", fontWeight: t.active ? 600 : 400, fontFamily: "'Open Sans'" }}>{t.label}</span>
           </button>
         ))}
@@ -1559,8 +1585,9 @@ function PlaybackScreen({
           >
             {/* Top bar */}
             <div
-              className="absolute top-0 left-0 right-0 pb-8 px-4 pt-12 pointer-events-auto"
-              style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%)" }}
+              className="absolute top-0 left-0 right-0 pb-8 px-4 pointer-events-auto"
+              // 48px, or clear of the notch / Dynamic Island when installed full-screen on a phone
+              style={{ paddingTop: "max(48px, calc(env(safe-area-inset-top, 0px) + 8px))", background: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%)" }}
             >
               <div className="flex items-center gap-3">
                 <button
@@ -1667,7 +1694,7 @@ function PlaybackScreen({
 
       {/* Persistent live badge */}
       {item.live && (
-        <div className="absolute top-14 right-4 z-30">
+        <div className="absolute right-4 z-30" style={{ top: "max(56px, calc(env(safe-area-inset-top, 0px) + 16px))" }}>
           <div
             className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] text-white font-bold bg-red-600"
             style={{ fontFamily: "'Open Sans'" }}
