@@ -37,6 +37,7 @@ import PipPlayer from "./PipPlayer";
 import TVShareSheet, { SHARE_TARGETS } from "./TVShareSheet";
 import BrowseChannels from "./BrowseChannels";
 import AllPrograms from "./AllPrograms";
+import StorePage from "./StorePage";
 import { BG, PANEL } from "./theme";
 // Brand marks for the share sheet (Simple Icons, CC0), inlined so they take the tile's colour
 
@@ -324,15 +325,17 @@ export default function App() {
   // A page is a tab plus, on the TV tab, which view (player / Browse Channels / All Program Guide). Going anywhere
   // remembers where you were; Back steps back through that (and to Home once there's nothing left). Arriving at the
   // TV player picks up the channel given, or else what's playing in the PiP mini-player.
-  type Page = { tab: "Clips" | "Home" | "TV"; tvView: "player" | "browse" | "programs" };
+  // store: the Store page, open over the Home tab
+  type Page = { tab: "Clips" | "Home" | "TV"; tvView: "player" | "browse" | "programs"; store?: boolean };
+  const [store, setStore] = useState(false);
   const history = useRef<Page[]>([]);
   const show = (to: Page, start?: TVPos | null) => {
-    setTab(to.tab); setTvView(to.tvView);
+    setTab(to.tab); setTvView(to.tvView); setStore(!!to.store);
     if (to.tab === "TV" && to.tvView === "player") { setTvStart(start ?? pip ?? null); setPip(null); }
   };
   const go = (to: Page, start?: TVPos | null) => {
-    const here: Page = { tab, tvView };
-    const same = here.tab === to.tab && (to.tab !== "TV" || here.tvView === to.tvView);
+    const here: Page = { tab, tvView, store };
+    const same = here.tab === to.tab && !!here.store === !!to.store && (to.tab !== "TV" || here.tvView === to.tvView);
     if (!same) history.current.push(here);
     show(to, start);
   };
@@ -361,13 +364,15 @@ export default function App() {
     mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   }, []);
-  // iOS home-screen app with a translucent status bar: the page gets the screen height minus the status bar
-  // (e.g. 873 of 932px) yet starts at the very top, leaving an empty strip under the nav. Stretch by that amount.
-  const [iosGap, setIosGap] = useState(0);
+  // iOS home-screen app with a translucent status bar: the page can get the screen height minus the status bar
+  // (e.g. 873 of 932px) yet start at the very top, leaving an empty strip at the bottom. Newer iOS versions may
+  // already report the full height in innerHeight while still laying out fixed elements short, so instead of
+  // measuring the gap, the app is sized to the whole screen (screen.height) in portrait.
+  const [iosFullH, setIosFullH] = useState<number | null>(null);
   useEffect(() => {
     const standalone = matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
     if (!standalone) return;
-    const read = () => setIosGap(innerHeight > innerWidth ? Math.max(0, screen.height - innerHeight) : 0);
+    const read = () => setIosFullH(innerHeight > innerWidth ? Math.max(screen.height, innerHeight) : null);
     read();
     addEventListener("resize", read);
     return () => removeEventListener("resize", read);
@@ -590,6 +595,19 @@ export default function App() {
                 bottom={feedBottom}
                 shorts={FEED.map(f => ({ img: f.img, title: f.title }))}
                 onOpenShort={i => { flushSync(() => setIdx(i)); go({ tab: "Clips", tvView }); }}
+                onOpenChannel={cur => playTV({ cur, t: 0 })}
+                onOpenStore={() => go({ tab: "Home", tvView, store: true })}
+                onToast={toast}
+              />
+            )}
+            {tab === "Home" && store && (
+              <StorePage
+                topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
+                // full screen: the Store page has no bottom navigation
+                bottom="0px"
+                bottomInset={isPhone ? "env(safe-area-inset-bottom, 0px)" : `${INDICATOR_H}px`}
+                fullScreen={isPhone ? (iosFullH ? `max(100lvh, ${iosFullH}px)` : "100dvh") : undefined}
+                onBack={back}
                 onToast={toast}
               />
             )}
@@ -635,14 +653,14 @@ export default function App() {
                 onExpand={playTV}
               />
             )}
-            <BottomNav
+            {!(tab === "Home" && store) && <BottomNav
               bottom={navBottom}
               indicator={!isPhone}
               phone={isPhone}
               onHeight={setPhoneNavH}
               active={tab}
               onTab={label => { if (label === "TV") openTV(); else if (label === "Home" || label === "Clips") go({ tab: label, tvView }); else toast(`${label} (demo)`); }}
-            />
+            />}
 
             {/* Details page (the CTA opens it) */}
             <AnimatePresence>
@@ -776,7 +794,7 @@ export default function App() {
 
   if (isPhone) {
     return (
-      <div className="fixed inset-x-0 top-0 overflow-hidden bg-black" style={{ height: `calc(100% + ${iosGap}px)` }} onPointerDownCapture={unmute} onKeyDownCapture={unmute}>
+      <div className="fixed inset-x-0 top-0 overflow-hidden bg-black" style={{ height: iosFullH ? `max(100%, ${iosFullH}px)` : "100%" }} onPointerDownCapture={unmute} onKeyDownCapture={unmute}>
         {screenBody}
       </div>
     );
