@@ -27,6 +27,12 @@ import chDiscovery from "../assets/pkg-details/discovery.png";
 import { CHANNELS, ChannelLogo } from "./TVScreen";
 import type { Pkg } from "./PackagesPage";
 import CoverageSheet, { type CoverageItem } from "./CoverageSheet";
+import TermsSheet from "./TermsSheet";
+import PaymentPage, { AIS_ACCOUNT, type Method } from "./PaymentPage";
+import CvvSheet from "./CvvSheet";
+import OtpPage from "./OtpPage";
+import QrSheet from "./QrSheet";
+import PurchaseDonePage from "./PurchaseDonePage";
 import { PAGE_BG, ON_SURFACE, ON_VARIANT, PANEL, OUTLINE, headerGlass } from "./theme";
 
 // ─── Package Details (Figma "Store" file, AIS PLAY: store_packageDetails 4425:145449) ───────────────────────────────
@@ -75,6 +81,28 @@ const SHOWN = 7;
 const DEVICES = [{ t: "Phone", icon: icPhone }, { t: "Tablet", icon: icTablet }, { t: "Laptop", icon: icLaptop }, { t: "TV", icon: icTv }];
 
 type Plan = { kind: string; price: number; per: string };
+// "Month" / "Year" / "Day" for a plan, and the period it covers from today ("9 Sep 2026 - 8 Oct 2026")
+const unit = (plan: Plan) => plan.per === "Daily" ? "Day" : plan.per === "Yearly" ? "Year" : "Month";
+const periodOf = (plan: Plan) => {
+  const fmt = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const start = new Date(), end = new Date(start);
+  if (plan.per === "Yearly") end.setFullYear(end.getFullYear() + 1);
+  else if (plan.per === "Monthly") end.setMonth(end.getMonth() + 1);
+  if (plan.per !== "Daily") end.setDate(end.getDate() - 1);
+  return plan.per === "Daily" ? fmt(start) : `${fmt(start)} - ${fmt(end)}`;
+};
+// the terms for a package and plan (Terms and Conditions sheet)
+const termsFor = (p: Pkg, plan: Plan) => [
+  `${p.t} (${plan.per} plan) costs ${baht(plan.price)} baht per ${plan.per === "Daily" ? "day" : plan.per === "Yearly" ? "year" : "month"}, excluding 7% VAT (${baht(plan.price * (1 + VAT), 2)} baht including VAT). The charge is billed to your AIS account or the payment method you choose at checkout.`,
+  plan.kind === "Recurring"
+    ? `The package renews automatically at the end of each ${plan.per === "Yearly" ? "year" : "month"} at the price then in effect until you cancel. You can cancel at any time from My Subscription; cancelling stops the next renewal and you keep access until the end of the period already paid for. Payments already made are not refunded, except where required by law.`
+    : `This is a one-time purchase that gives access for one day from the moment of purchase. It does not renew, and the charge is not refundable once the package is active.`,
+  `The package can be watched on up to ${p.screens} screen${p.screens > 1 ? "s" : ""} at the same time, on phones, tablets, laptops and TVs signed in to the same AIS PLAY account. Picture quality (up to 4K and Dolby Atmos where offered) depends on your device, network and the content itself.`,
+  `Channels, apps, leagues and titles included in the package may change because of rights agreements with content partners. AIS will tell you about significant changes in advance where possible. Live events can be moved, delayed or blacked out by the rights holders.`,
+  `Partner apps included in the package (such as streaming services) may need their own account activation, and are also subject to that partner's terms of use and privacy policy.`,
+  `The package is for personal, non-commercial viewing in Thailand only. Recording, re-broadcasting, sharing your account outside your household or showing content in public venues is not allowed and may lead to the package being suspended without refund.`,
+  `AIS may update these terms. Continuing to use the package after an update means you accept the updated terms. For help, call 1175 (AIS) or 1530 (3BB), or visit the myAIS website.`,
+];
 const num = (s: string) => Number(s.replace(/,/g, ""));
 const baht = (n: number, dp = 0) => n.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 // the package's plans, from the durations it's sold in
@@ -100,6 +128,17 @@ export default function PackageDetailsPage({ p, topInset, bottomInset = "0px", o
   const plan = plans[pick];
   const services = p.apps.map(a => SERVICES[a]).filter(Boolean);
   const [sheet, setSheet] = useState<"Sports" | "Premium Channels" | null>(null);
+  // Confirm opens the Terms and Conditions; agreeing opens the payment methods, and paying completes the (demo)
+  // subscription
+  const [terms, setTerms] = useState(false);
+  const [paying, setPaying] = useState(false);
+  // after Process Payment: the AIS bill asks for an OTP first, QR PromptPay shows its QR to pay, a saved card asks for
+  // its CVV; every method ends on Purchase complete (its receipt line)
+  const [otp, setOtp] = useState(false);
+  const [qr, setQr] = useState(false);
+  const [cvvCard, setCvvCard] = useState<Method | null>(null);
+  const [paidWith, setPaidWith] = useState<string | null>(null);
+  const [method, setMethod] = useState("");
   const sports: CoverageItem[] = [
     ...p.league.filter(l => LEAGUES[l]).map(l => ({ key: l, name: LEAGUES[l].name ?? l, tile: (size: number) => <Tile {...LEAGUES[l]} size={size} /> })),
     ...SPORTS_CHANNELS,
@@ -114,7 +153,7 @@ export default function PackageDetailsPage({ p, topInset, bottomInset = "0px", o
       <div className="absolute inset-x-0 top-0 z-10 transition-all duration-300" style={{ paddingTop: topInset, ...headerGlass(scrolled) }}>
         <div className="flex items-center gap-2 px-4" style={{ height: 64 }}>
           <button onClick={onBack} aria-label="Back" className="w-8 h-8 rounded-full flex items-center justify-center"><ChevronLeft size={24} color="#fff" /></button>
-          <h1 className="m-0" style={{ fontSize: 24, fontWeight: 600, color: ON_SURFACE }}>Package Details</h1>
+          <h1 className="m-0" style={{ fontSize: 20, fontWeight: 600, color: ON_SURFACE }}>Package Details</h1>
         </div>
       </div>
 
@@ -198,18 +237,35 @@ export default function PackageDetailsPage({ p, topInset, bottomInset = "0px", o
           <Description p={p} label={label} small={small} />
         </div>
         {/* room for the sticky bar */}
-        <div style={{ height: `calc(${bottomInset} + 112px)` }} />
+        <div style={{ height: `calc(${bottomInset} + 96px)` }} />
       </div>
 
       {/* sticky: the picked plan with VAT, and Confirm */}
-      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-2 px-4 pt-4"
-        style={{ paddingBottom: `calc(${bottomInset} + 16px)`, background: "rgba(7,14,22,0.82)", borderTop: `1px solid ${OUTLINE}`, backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)" }}>
+      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-4 px-4 pt-2"
+        style={{ paddingBottom: bottomInset, background: "rgba(7,14,22,0.82)", borderTop: `1px solid ${OUTLINE}`, backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)" }}>
         <span style={{ fontSize: 18, lineHeight: "24px", color: ON_SURFACE }}>VAT included: {baht(plan.price * (1 + VAT), 2)} baht</span>
-        <button onClick={() => onToast(`${p.t}: ${plan.per} plan confirmed (demo)`)} className="w-full rounded-[10px] flex items-center justify-center"
+        <button onClick={() => setTerms(true)} className="w-full rounded-[10px] flex items-center justify-center"
           style={{ minHeight: 48, background: "#f0f0f0", boxShadow: "0 4px 4px rgba(0,0,0,0.2)" }}>
           <span style={{ fontSize: 16, fontWeight: 700, color: "#282828" }}>Confirm</span>
         </button>
       </div>
+      {terms && <TermsSheet topInset={topInset} bottomInset={bottomInset} terms={termsFor(p, plan)}
+        onAgree={() => { setTerms(false); setPaying(true); }} onClose={() => setTerms(false)} />}
+      {paying && <PaymentPage topInset={topInset} bottomInset={bottomInset}
+        order={{ title: p.t, img: p.img, contain: p.contain, recurring: plan.kind === "Recurring",
+          price: `${baht(plan.price)} baht / ${plan.per === "Daily" ? "Day" : plan.per === "Yearly" ? "Year" : "Month"}`, vatIncluded: baht(plan.price * (1 + VAT), 2) }}
+        onPay={m => { setMethod(m.label); if (m.id === "ais") setOtp(true); else if (m.id === "qr") setQr(true); else if (m.id.startsWith("card")) setCvvCard(m); else setPaidWith(m.label); }} onBack={() => setPaying(false)} />}
+      {otp && <OtpPage topInset={topInset} bottomInset={bottomInset} account={AIS_ACCOUNT}
+        amount={`${baht(plan.price * (1 + VAT), 2)} baht`} per={unit(plan)}
+        onConfirm={() => { setOtp(false); setPaidWith(method); }} onClose={() => setOtp(false)} onToast={onToast} />}
+      {qr && <QrSheet topInset={topInset} account={AIS_ACCOUNT} amount={`${baht(plan.price * (1 + VAT), 2)} baht`}
+        onPaid={() => { setQr(false); setPaidWith(method); }} onClose={() => setQr(false)} onToast={onToast} />}
+      {cvvCard && <CvvSheet bottomInset={bottomInset} card={cvvCard}
+        onPaid={() => { setCvvCard(null); setPaidWith(method); }} onClose={() => setCvvCard(null)} />}
+      {paidWith && <PurchaseDonePage topInset={topInset} bottomInset={bottomInset}
+        receipt={{ pkg: p.t.endsWith(" Package") ? `${p.t.slice(0, -8)} ${plan.per} Package` : `${p.t} (${plan.per})`, img: p.img, contain: p.contain,
+          method: paidWith, duration: periodOf(plan), amount: `${baht(plan.price)} baht / ${unit(plan)} (VAT incl. ${baht(plan.price * (1 + VAT), 2)} baht)` }}
+        onActivate={() => onToast("Opening the activation link (demo)")} onExplore={onBack} />}
       {sheet && <CoverageSheet title={sheet} items={sheet === "Sports" ? sports : premium} onClose={() => setSheet(null)} />}
       <style>{`.details-scroll,.details-rail{scrollbar-width:none}.details-scroll::-webkit-scrollbar,.details-rail::-webkit-scrollbar{display:none}`}</style>
     </div>

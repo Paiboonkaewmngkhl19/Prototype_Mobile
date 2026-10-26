@@ -227,16 +227,16 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
 
           {/* Customer Support */}
           <section className="flex flex-col gap-6 px-4">
-            <div className="flex items-center gap-1"><Headset size={24} color={ON_SURFACE} /><h3 className="m-0" style={{ fontSize: 18, fontWeight: 400, color: ON_SURFACE }}>Customer Support</h3></div>
+            <IconTitle icon={<Headset size={24} color={ON_SURFACE} />}><h3 className="m-0" style={{ fontSize: 18, fontWeight: 400, color: ON_SURFACE }}>Customer Support</h3></IconTitle>
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1"><Phone size={20} color={ON_SURFACE} /><span style={{ fontSize: 18, color: ON_SURFACE }}>Customer service team</span></div>
-              <ul className="m-0 pl-6 flex flex-col gap-2" style={{ fontSize: 14, lineHeight: "20px", color: ON_SURFACE }}>
+              <IconTitle icon={<Phone size={20} color={ON_SURFACE} />}><span style={{ fontSize: 18, color: ON_SURFACE }}>Customer service team</span></IconTitle>
+              <ul className="m-0 pl-9 flex flex-col gap-2" style={{ fontSize: 14, lineHeight: "20px", color: ON_SURFACE }}>
                 <li>Dial 1175 to speak directly with AIS customer support team.</li>
                 <li>Dial 1530 to speak directly with 3BB customer support team.</li>
               </ul>
             </div>
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1"><Globe size={20} color={ON_SURFACE} /><span style={{ fontSize: 18, color: ON_SURFACE }}>myAIS Website</span></div>
+              <IconTitle icon={<Globe size={20} color={ON_SURFACE} />}><span style={{ fontSize: 18, color: ON_SURFACE }}>myAIS Website</span></IconTitle>
               <button onClick={() => demo("myAIS website")} className="w-full rounded-full" style={{ minHeight: 48, background: "#f0f0f0", fontSize: 16, fontWeight: 700, color: "#282828" }}>Access support through the website</button>
             </div>
           </section>
@@ -320,12 +320,23 @@ export function CategoryChip({ c, sel, withImg = true, onTap }: { c: Chip; sel: 
   );
 }
 
+// a heading with a leading icon: every icon sits in the same 24px box, 12px from its title, so titles (and the
+// text indented under them, 36px) line up whatever the icon's size
+function IconTitle({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="shrink-0 flex items-center justify-center" style={{ width: 24, height: 24 }}>{icon}</span>
+      {children}
+    </div>
+  );
+}
+
 // FAQs: accordion, one open at a time; View all FAQs
 function Faqs({ demo }: { demo: (label: string) => void }) {
   const [open, setOpen] = useState<number | null>(0);
   return (
     <section className="flex flex-col gap-6 px-4">
-      <div className="flex items-center gap-1"><CircleHelp size={24} color={ON_SURFACE} /><h3 className="m-0" style={{ fontSize: 18, fontWeight: 400, color: ON_SURFACE }}>FAQs</h3></div>
+      <IconTitle icon={<CircleHelp size={24} color={ON_SURFACE} />}><h3 className="m-0" style={{ fontSize: 18, fontWeight: 400, color: ON_SURFACE }}>FAQs</h3></IconTitle>
       {FAQS.map((f, k) => (
         <div key={f.q} className="flex flex-col">
           <button onClick={() => setOpen(open === k ? null : k)} aria-expanded={open === k} className="flex items-center justify-between gap-3 text-left">

@@ -45,7 +45,7 @@ export function TVSubHeader({ topInset, title, cat, subtitle, scrolled, folded, 
           <button onClick={onBack} aria-label="Back" className="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
             <img src={iconBack} alt="" width={20} height={20} className="block" />
           </button>
-          <h1 className="m-0 whitespace-nowrap" style={{ fontSize: 24, fontWeight: 600, color: ON_SURFACE }}>{title}</h1>
+          <h1 className="m-0 whitespace-nowrap" style={{ fontSize: 20, fontWeight: 600, color: ON_SURFACE }}>{title}</h1>
         </div>
       </div>
       {/* folded: the tabs and docked filters close up into a subtitle under the title, lined up with its text */}

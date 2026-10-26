@@ -144,7 +144,7 @@ export default function PackagesPage({ kind, topInset, bottomInset = "0px", full
       }}>
         <div className="flex items-center gap-2 px-4" style={{ height: 64 }}>
           <button onClick={onBack} aria-label="Back" className="w-8 h-8 rounded-full flex items-center justify-center"><ChevronLeft size={24} color="#fff" /></button>
-          <h1 className="m-0" style={{ fontSize: 24, fontWeight: 600, color: ON_SURFACE }}>{kind} Package</h1>
+          <h1 className="m-0" style={{ fontSize: 20, fontWeight: 600, color: ON_SURFACE }}>{kind} Package</h1>
         </div>
         <div className="relative overflow-hidden" style={{
           // chips: 44px row + 16px under it; folded: a 20px subtitle pulled up under the title

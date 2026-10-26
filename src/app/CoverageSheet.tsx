@@ -21,7 +21,7 @@ export default function CoverageSheet({ title, items, onClose }: { title: string
         style={{ maxHeight: "min(512px, calc(100% - 34px))", background: PANEL, transform: shown ? "translateY(0)" : "translateY(100%)", transitionTimingFunction: "cubic-bezier(.2,0,0,1)" }}>
         <div className="shrink-0 flex justify-center pt-4 pb-2"><div className="rounded-full" style={{ width: 48, height: 6, background: "#dadbdc" }} /></div>
         <div className="shrink-0 flex items-center justify-between px-4" style={{ height: 44 }}>
-          <h2 className="m-0" style={{ fontSize: 24, fontWeight: 600, color: ON_SURFACE }}>{title}</h2>
+          <h2 className="m-0" style={{ fontSize: 20, fontWeight: 600, color: ON_SURFACE }}>{title}</h2>
           <button onClick={close} aria-label="Close" className="w-8 h-8 rounded-full flex items-center justify-center">
             <img src={icClose} alt="" width={20} height={20} style={{ filter: "brightness(0) invert(1)" }} />
           </button>

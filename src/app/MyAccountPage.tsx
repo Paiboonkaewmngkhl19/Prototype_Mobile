@@ -49,7 +49,7 @@ export default function MyAccountPage({ topInset, bottomInset = "0px", fullScree
           <button onClick={onBack} aria-label="Back" className="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
             <img src={icBack} alt="" width={20} height={20} />
           </button>
-          <h1 className="m-0" style={{ fontSize: 24, fontWeight: 600, color: ON_SURFACE }}>My Account</h1>
+          <h1 className="m-0" style={{ fontSize: 20, fontWeight: 600, color: ON_SURFACE }}>My Account</h1>
         </div>
       </div>
 

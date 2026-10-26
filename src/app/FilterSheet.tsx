@@ -76,7 +76,7 @@ export default function FilterSheet({ value, reset = NO_FILTER, onApply, onClose
         <div className="shrink-0 flex items-center justify-between px-4" style={{ height: 44 }}>
           <div className="flex items-center gap-2">
             <button onClick={() => close(onClose)} aria-label="Back" className="w-8 h-8 rounded-full flex items-center justify-center"><ChevronLeft size={20} color="#fff" /></button>
-            <h2 className="m-0" style={{ fontSize: 24, fontWeight: 600, color: ON_SURFACE }}>Filter</h2>
+            <h2 className="m-0" style={{ fontSize: 20, fontWeight: 600, color: ON_SURFACE }}>Filter</h2>
           </div>
           <button onClick={() => close(onClose)} aria-label="Close" className="w-8 h-8 rounded-full flex items-center justify-center"><img src={icClose} alt="" width={20} height={20} style={{ filter: "brightness(0) invert(1)" }} /></button>
         </div>

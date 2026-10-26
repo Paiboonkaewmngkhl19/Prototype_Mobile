@@ -306,7 +306,7 @@ export default function HomeScreen({
               className="absolute left-0 top-1/2 flex items-center gap-2 transition-all duration-300 whitespace-nowrap"
               style={{ opacity: titleOn ? 1 : 0, transform: `translateY(${titleOn ? "-50%" : "calc(-50% + 8px)"})`, pointerEvents: titleOn ? "auto" : "none" }}>
               <span className="w-8 h-8 flex items-center justify-center"><ChevronDown size={20} className="text-white" /></span>
-              <span style={{ fontSize: 24, fontWeight: 600, color: ON_SURFACE }}>{tab}</span>
+              <span style={{ fontSize: 20, fontWeight: 600, color: ON_SURFACE }}>{tab}</span>
             </button>
           </div>
           <div className="flex items-center gap-2">
