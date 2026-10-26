@@ -12,6 +12,7 @@ import logoIqiyi from "../assets/store/logo-iqiyi.png";
 import lgPl from "../assets/sport/lg-pl.png";
 import lgUcl from "../assets/sport/lg-ucl.png";
 import lgRws from "../assets/sport/lg-rws.png";
+import type { Kind } from "./PackagesPage";
 import { PAGE_BG, BG, ON_SURFACE, ON_VARIANT, CHIP_BG, CHIP_BORDER, PILL, PILL_RING, GLASS_CARD, PANEL, OUTLINE } from "./theme";
 
 // ─── Store (Figma "Store" file, Mobile / Content modal 5222:66002) ────────────────────────────────────────────────
@@ -35,8 +36,11 @@ const HERO = [
   { img: a("posters_portrait/House.jpg"), t: "HBO Max", price: 159, vat: "170.13", tags: ["Monthly", "New"] },
 ];
 
-type Chip = { label: string; logo?: string; text?: string };
-const RAILS: { title: string; chips: Chip[]; cards: Pkg[] }[] = [
+// the rails whose title opens a package list (Great Value has none)
+const isKind = (t: string): t is Kind => t === "Sports" || t === "Movies" || t === "Shorts";
+
+export type Chip = { label: string; logo?: string; text?: string };
+export const RAILS: { title: string; chips: Chip[]; cards: Pkg[] }[] = [
   {
     title: "Sports",
     chips: [{ label: "Popular" }, { label: "Football", logo: lgUcl }, { label: "NBA", text: "NBA" }, { label: "Premier League", logo: lgPl }, { label: "RWS", logo: lgRws }],
@@ -86,11 +90,11 @@ const FAQS = [
   { q: "Which devices can I watch on?", a: "AIS PLAY works on phones, tablets, smart TVs, the AIS PLAYBOX and the web, up to the number of screens your package allows." },
 ];
 
-export default function StorePage({ topInset, bottom, bottomInset = "0px", fullScreen, onBack, onToast }: {
+export default function StorePage({ topInset, bottom, bottomInset = "0px", fullScreen, onBack, onOpenPackages, onToast }: {
   topInset: string; bottom: string; bottomInset?: string;   // bottomInset: room kept clear for the home indicator
   // on a phone: fixed to the whole screen (this height), clear of every container, so nothing can cut it short
   fullScreen?: string;
-  onBack: () => void; onToast: (msg: string) => void;
+  onBack: () => void; onOpenPackages: (kind: Kind) => void; onToast: (msg: string) => void;
 }) {
   const demo = (label: string) => onToast(`${label} (demo)`);
   const [slide, setSlide] = useState(0);
@@ -143,7 +147,7 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
         </section>
 
         <div className="flex flex-col gap-6 pt-6" style={{ paddingBottom: `calc(40px + ${bottomInset})` }}>
-          {RAILS.map(r => <CategoryRail key={r.title} rail={r} demo={demo} />)}
+          {RAILS.map(r => <CategoryRail key={r.title} rail={r} demo={demo} onMore={isKind(r.title) ? () => onOpenPackages(r.title as Kind) : undefined} />)}
 
           {/* PPV Event: 250 x 375 posters with the price, title, Premium and the date */}
           <Rail title="PPV Event">
@@ -246,8 +250,13 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
 function RailHeader({ title, more, onMore }: { title: string; more?: boolean; onMore?: () => void }) {
   return (
     <div className="flex items-center px-4">
-      <h3 className="m-0" style={{ fontSize: 18, fontWeight: 400, lineHeight: "24px", color: ON_SURFACE }}>{title}</h3>
-      {more && <button onClick={onMore} aria-label={`More ${title}`} className="p-1 rounded-full"><ChevronRight size={16} color="#fff" /></button>}
+      {/* with more, the whole title (not just the chevron) opens the list */}
+      {more
+        ? <button onClick={onMore} aria-label={`More ${title}`} className="flex items-center">
+            <h3 className="m-0" style={{ fontSize: 18, fontWeight: 400, lineHeight: "24px", color: ON_SURFACE }}>{title}</h3>
+            <span className="p-1"><ChevronRight size={16} color="#fff" /></span>
+          </button>
+        : <h3 className="m-0" style={{ fontSize: 18, fontWeight: 400, lineHeight: "24px", color: ON_SURFACE }}>{title}</h3>}
     </div>
   );
 }
@@ -280,32 +289,34 @@ function Square({ img, onTap }: { img: string; onTap: () => void }) {
 }
 
 // a package rail with its category chips (a 32px round logo + name; the picked one light)
-function CategoryRail({ rail, demo }: { rail: (typeof RAILS)[number]; demo: (label: string) => void }) {
+function CategoryRail({ rail, demo, onMore }: { rail: (typeof RAILS)[number]; demo: (label: string) => void; onMore?: () => void }) {
   const [on, setOn] = useState(rail.chips[0].label);
   return (
     <section className="flex flex-col gap-4">
-      <RailHeader title={rail.title} more onMore={() => demo(rail.title)} />
+      <RailHeader title={rail.title} more onMore={onMore ?? (() => demo(rail.title))} />
       <div className="store-rail flex gap-2 overflow-x-auto px-4">
-        {rail.chips.map(c => {
-          const sel = c.label === on, withImg = rail.title !== "Great Value";
-          return (
-            <button key={c.label} onClick={() => setOn(c.label)} className="shrink-0 flex items-center gap-[6px] rounded-[8px]"
-              style={{ height: 44, padding: withImg ? "4px 12px 4px 4px" : "4px 16px", background: sel ? PILL : CHIP_BG,
-                boxShadow: sel ? PILL_RING : "none", border: sel ? "none" : `1px solid ${CHIP_BORDER}`,
-                backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
-              {withImg && (
-                <span className="rounded-full overflow-hidden flex items-center justify-center shrink-0" style={{ width: 32, height: 32, background: c.logo ? "#fff" : "#282828" }}>
-                  {c.logo ? <img src={c.logo} alt="" className="w-full h-full object-cover" /> : c.text && <span style={{ fontSize: 10, fontWeight: 800, color: "#fff" }}>{c.text}</span>}
-                </span>
-              )}
-              <span className="whitespace-nowrap" style={{ fontSize: 14, fontWeight: 500, color: sel ? "#fff" : ON_SURFACE, fontWeight: sel ? 600 : 500, textShadow: sel ? "0 1px 3px rgba(0,0,0,.35)" : "none" }}>{c.label}</span>
-            </button>
-          );
-        })}
+        {rail.chips.map(c => <CategoryChip key={c.label} c={c} sel={c.label === on} withImg={rail.title !== "Great Value"} onTap={() => setOn(c.label)} />)}
         <Pad />
       </div>
       <div className="store-rail flex gap-3 overflow-x-auto px-4">{rail.cards.map(p => <PackageCard key={p.t} p={p} onTap={() => demo(p.t)} />)}<Pad /></div>
     </section>
+  );
+}
+
+// a category chip: a 32px round logo (or short text) + name; the picked one in the light glass
+export function CategoryChip({ c, sel, withImg = true, onTap }: { c: Chip; sel: boolean; withImg?: boolean; onTap: () => void }) {
+  return (
+    <button onClick={onTap} className="shrink-0 flex items-center gap-[6px] rounded-[8px]"
+      style={{ height: 44, padding: withImg ? "4px 12px 4px 4px" : "4px 16px", background: sel ? PILL : CHIP_BG,
+        boxShadow: sel ? PILL_RING : "none", border: sel ? "none" : `1px solid ${CHIP_BORDER}`,
+        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+      {withImg && (
+        <span className="rounded-full overflow-hidden flex items-center justify-center shrink-0" style={{ width: 32, height: 32, background: c.logo ? "#fff" : "#282828" }}>
+          {c.logo ? <img src={c.logo} alt="" className="w-full h-full object-cover" /> : c.text && <span style={{ fontSize: 10, fontWeight: 800, color: "#fff" }}>{c.text}</span>}
+        </span>
+      )}
+      <span className="whitespace-nowrap" style={{ fontSize: 14, color: sel ? "#fff" : ON_SURFACE, fontWeight: sel ? 600 : 500, textShadow: sel ? "0 1px 3px rgba(0,0,0,.35)" : "none" }}>{c.label}</span>
+    </button>
   );
 }
 

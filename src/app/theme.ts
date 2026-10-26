@@ -24,3 +24,9 @@ export const PANEL_SOLID = "#1c2130";
 export const ACCENT = "linear-gradient(115deg, #5f6982 0%, #d6def0 55%, #8e98b0 110%)";
 // dividers and the nav's top line, a navy-tinted grey
 export const OUTLINE = "#1f2a38";
+// a page header floating over its content (Home, Store, packages): a dark fade at rest, Figma's "Mobile / Header
+// Detail Page" glass (a dark-to-clear tint over a blur of the page below) once the page has scrolled
+export const headerGlass = (scrolled: boolean) => ({
+  background: scrolled ? "linear-gradient(180deg, rgba(7,14,22,0.6), rgba(118,128,150,0))" : "linear-gradient(180deg, rgba(0,0,0,0.65), rgba(0,0,0,0))",
+  backdropFilter: scrolled ? "blur(20px)" : "none", WebkitBackdropFilter: scrolled ? "blur(20px)" : "none",
+});

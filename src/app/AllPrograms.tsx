@@ -4,7 +4,7 @@ import iconTimeshift from "../assets/epg/timeshift.svg";
 import iconBell from "../assets/epg/bell.svg";
 import iconBellOn from "../assets/epg/bell-filled.svg";
 import { CHANNELS, ChannelLogo, Crown, channelsFor, clock, nowMinutes, scheduleFor, tvStore, type Programme } from "./TVScreen";
-import { FONT, SubFilters, TVSubHeader, useSubPageScroll, useTVCategory } from "./BrowseChannels";
+import { FONT, SubFilters, TVSubHeader, subLine, useSubPageScroll, useTVCategory } from "./BrowseChannels";
 import DateTimeSheet, { guideLabel, type GuideTime } from "./DateTimeSheet";
 import { PAGE_BG, ON_SURFACE, ON_VARIANT, LIVE } from "./theme";
 
@@ -27,7 +27,7 @@ export default function AllPrograms({ topInset, bottom, watching, onBack, onPick
   const { cat, setCat, sub, setSub } = useTVCategory();
   const list = useMemo(() => channelsFor(cat, tvStore.recent, tvStore.favs, sub), [cat, sub]);
   const now = nowMinutes();
-  const { headerH, setHeaderH, scrolled, docked, onScroll, scroller } = useSubPageScroll();
+  const { headerH, setHeaderH, scrolled, docked, folded, unfold, onScroll, scroller } = useSubPageScroll();
   const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   // the moment the guide shows: now, or a day / hour picked in the Date & Time sheet (minutes from midnight today)
   const [at, setAt] = useState<GuideTime | null>(null);
@@ -52,7 +52,7 @@ export default function AllPrograms({ topInset, bottom, watching, onBack, onPick
   return (
     // over the nav while the Date & Time sheet is open
     <div className="absolute inset-x-0 top-0" style={{ bottom, zIndex: picking ? 25 : 15, background: PAGE_BG, fontFamily: FONT }}>
-      <TVSubHeader topInset={topInset} title="All Program Guide" cat={cat} scrolled={scrolled} onCat={setCat} onBack={onBack} onHeight={setHeaderH}>
+      <TVSubHeader topInset={topInset} title="All Program Guide" cat={cat} subtitle={subLine(cat, sub)} scrolled={scrolled} folded={folded} onUnfold={unfold} onCat={setCat} onBack={onBack} onHeight={setHeaderH}>
         <SubFilters cat={cat} sub={sub} onSub={setSub} docked={docked} inHeader />
       </TVSubHeader>
       <div ref={scroller} className="absolute inset-0 overflow-y-auto tvsub-rail pb-4" style={{ paddingTop: headerH }} onScroll={onScroll}>

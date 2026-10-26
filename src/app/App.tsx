@@ -38,6 +38,9 @@ import TVShareSheet, { SHARE_TARGETS } from "./TVShareSheet";
 import BrowseChannels from "./BrowseChannels";
 import AllPrograms from "./AllPrograms";
 import StorePage from "./StorePage";
+import ProfilePage from "./ProfilePage";
+import MyAccountPage from "./MyAccountPage";
+import PackagesPage, { type Kind as PkgKind } from "./PackagesPage";
 import { BG, PANEL } from "./theme";
 // Brand marks for the share sheet (Simple Icons, CC0), inlined so they take the tile's colour
 
@@ -312,7 +315,7 @@ export default function App() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [screen, setScreen] = useState<"feed" | "playback">("feed");
   // Bottom navigation tab: Clips (the feed), or Home / TV (HomeScreen / TVScreen, drawn over the feed, which pauses meanwhile)
-  const [tab, setTab] = useState<"Clips" | "Home" | "TV">("Home");
+  const [tab, setTab] = useState<"Clips" | "Home" | "TV" | "Profile">("Home");
   // TV ↔ PiP: leaving the TV page keeps its channel playing in a mini-player over Home; expanding it (or the TV tab)
   // brings the TV page back at the same channel and position
   const [pip, setPip] = useState<TVPos | null>(null);
@@ -325,17 +328,20 @@ export default function App() {
   // A page is a tab plus, on the TV tab, which view (player / Browse Channels / All Program Guide). Going anywhere
   // remembers where you were; Back steps back through that (and to Home once there's nothing left). Arriving at the
   // TV player picks up the channel given, or else what's playing in the PiP mini-player.
-  // store: the Store page, open over the Home tab
-  type Page = { tab: "Clips" | "Home" | "TV"; tvView: "player" | "browse" | "programs"; store?: boolean };
+  // store: the Store page, open over the Home tab; account: the My Account page, open over the Profile tab;
+  // pkgs: a package list (Sports / Movies / Shorts), open over the Store
+  type Page = { tab: "Clips" | "Home" | "TV" | "Profile"; tvView: "player" | "browse" | "programs"; store?: boolean; account?: boolean; pkgs?: PkgKind };
   const [store, setStore] = useState(false);
+  const [account, setAccount] = useState(false);
+  const [pkgs, setPkgs] = useState<PkgKind | undefined>();
   const history = useRef<Page[]>([]);
   const show = (to: Page, start?: TVPos | null) => {
-    setTab(to.tab); setTvView(to.tvView); setStore(!!to.store);
+    setTab(to.tab); setTvView(to.tvView); setStore(!!to.store); setAccount(!!to.account); setPkgs(to.pkgs);
     if (to.tab === "TV" && to.tvView === "player") { setTvStart(start ?? pip ?? null); setPip(null); }
   };
   const go = (to: Page, start?: TVPos | null) => {
-    const here: Page = { tab, tvView, store };
-    const same = here.tab === to.tab && !!here.store === !!to.store && (to.tab !== "TV" || here.tvView === to.tvView);
+    const here: Page = { tab, tvView, store, account, pkgs };
+    const same = here.tab === to.tab && !!here.store === !!to.store && !!here.account === !!to.account && here.pkgs === to.pkgs && (to.tab !== "TV" || here.tvView === to.tvView);
     if (!same) history.current.push(here);
     show(to, start);
   };
@@ -600,11 +606,43 @@ export default function App() {
                 onToast={toast}
               />
             )}
+            {tab === "Profile" && (
+              <ProfilePage
+                topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
+                bottom={feedBottom}
+                onOpenChannel={cur => playTV({ cur, t: 0 })}
+                onOpenStore={() => go({ tab: "Home", tvView, store: true })}
+                onOpenAccount={() => go({ tab: "Profile", tvView, account: true })}
+                onToast={toast}
+              />
+            )}
+            {tab === "Profile" && account && (
+              <MyAccountPage
+                topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
+                bottomInset={isPhone ? "env(safe-area-inset-bottom, 0px)" : `${INDICATOR_H}px`}
+                fullScreen={isPhone ? (iosFullH ? `max(100lvh, ${iosFullH}px)` : "100dvh") : undefined}
+                onBack={back}
+                onOpenStore={() => go({ tab: "Home", tvView, store: true })}
+                onToast={toast}
+              />
+            )}
             {tab === "Home" && store && (
               <StorePage
                 topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
                 // full screen: the Store page has no bottom navigation
                 bottom="0px"
+                bottomInset={isPhone ? "env(safe-area-inset-bottom, 0px)" : `${INDICATOR_H}px`}
+                fullScreen={isPhone ? (iosFullH ? `max(100lvh, ${iosFullH}px)` : "100dvh") : undefined}
+                onBack={back}
+                onOpenPackages={kind => go({ tab: "Home", tvView, store: true, pkgs: kind })}
+                onToast={toast}
+              />
+            )}
+            {tab === "Home" && store && pkgs && (
+              <PackagesPage
+                key={pkgs}
+                kind={pkgs}
+                topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
                 bottomInset={isPhone ? "env(safe-area-inset-bottom, 0px)" : `${INDICATOR_H}px`}
                 fullScreen={isPhone ? (iosFullH ? `max(100lvh, ${iosFullH}px)` : "100dvh") : undefined}
                 onBack={back}
@@ -653,13 +691,13 @@ export default function App() {
                 onExpand={playTV}
               />
             )}
-            {!(tab === "Home" && store) && <BottomNav
+            {!(tab === "Home" && store) && !(tab === "Profile" && account) && <BottomNav
               bottom={navBottom}
               indicator={!isPhone}
               phone={isPhone}
               onHeight={setPhoneNavH}
               active={tab}
-              onTab={label => { if (label === "TV") openTV(); else if (label === "Home" || label === "Clips") go({ tab: label, tvView }); else toast(`${label} (demo)`); }}
+              onTab={label => { if (label === "TV") openTV(); else if (label === "Home" || label === "Clips" || label === "Profile") go({ tab: label, tvView }); else toast(`${label} (demo)`); }}
             />}
 
             {/* Details page (the CTA opens it) */}
