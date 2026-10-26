@@ -658,6 +658,7 @@ export default function App() {
                 onShare={setTvShare}
                 onBrowse={pos => { setPip(pos); go({ tab: "TV", tvView: "browse" }); }}
                 onPrograms={pos => { setPip(pos); go({ tab: "TV", tvView: "programs" }); }}
+                onOpenStore={pos => { setPip(pos); go({ tab: "Home", tvView, store: true }); }}
                 onBack={pos => { setPip(pos); back(); }}
                 onToast={toast}
               />

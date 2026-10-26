@@ -177,10 +177,12 @@ const fmt = (s: number) => {
 // where the TV page picks up: the channel and playback position (from the PiP mini-player, or a fresh start)
 export interface TVPos { cur: number; t: number }
 
-export default function TVScreen({ topInset, bottom, muted, start, onBack, onBrowse, onPrograms, onShare, onToast }: {
+export default function TVScreen({ topInset, bottom, muted, start, onBack, onBrowse, onPrograms, onOpenStore, onShare, onToast }: {
   topInset: string; bottom: string; muted: boolean; start?: TVPos | null; onShare: (ch: Channel) => void;
   // Browse Channels / All Programs open their own pages, the channel carrying on in the PiP mini-player meanwhile
   onBrowse: (pos: TVPos) => void; onPrograms: (pos: TVPos) => void;
+  // Explore Package (free preview) opens the Store the same way
+  onOpenStore: (pos: TVPos) => void;
   // Back and the PiP button both leave for Home, handing over what's playing so it carries on in the mini-player
   onBack: (pos: TVPos) => void; onToast: (msg: string) => void;
 }) {
@@ -526,7 +528,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
               <span style={{ color: ON_VARIANT }}>Free preview</span>
               <span style={{ color: ON_SURFACE, fontWeight: 600 }}>• {fmt(preview)} minutes left</span>
             </span>
-            <button onClick={e => { e.stopPropagation(); demo("Explore Package"); }}
+            <button onClick={e => { e.stopPropagation(); exitFull(); onOpenStore({ cur, t: video.current?.currentTime ?? 0 }); }}
               className="flex items-center gap-1 rounded-[4px]" style={{ height: full ? 40 : 32, padding: full ? "0 12px" : "0 8px", background: PILL, boxShadow: PILL_RING, color: "#fff", fontSize: full ? 14 : 10, fontWeight: 600, textShadow: "0 1px 3px rgba(0,0,0,.35)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
               <img src={iconCrown} alt="" style={{ width: full ? 18 : 14, height: full ? 18 : 14, filter: "brightness(0)" }} />Explore Package
             </button>
