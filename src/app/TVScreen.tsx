@@ -318,9 +318,26 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
   const singleTap = useRef<ReturnType<typeof setTimeout>>();
   const [tapFx, setTapFx] = useState<{ side: -1 | 1; secs: number; key: number } | null>(null);
   const sideAt = (e: { clientX: number; clientY: number }, el: Element) => along(e, el.getBoundingClientRect());
+  // live TV: the bar is full at the live edge and only shortens behind it. What's tracked is how far behind live the
+  // picture is (not the clip's own time, which loops): rewinding adds to it, fast-forward takes it back down to live
+  // and no further, a pause adds the time it lasted; changing channel or resuming starts live again
+  const behind = useRef(0), lastTick = useRef(0), pausedAt = useRef(0);
+  const goLive = () => { behind.current = 0; pausedAt.current = 0; lastTick.current = performance.now(); };
+  const onTick = (v: HTMLVideoElement) => {
+    const now = performance.now(), dt = (now - lastTick.current) / 1000;
+    lastTick.current = now;
+    if (v.playbackRate > 1 && dt < 1) {
+      behind.current = Math.max(0, behind.current - (v.playbackRate - 1) * dt);
+      if (behind.current === 0) v.playbackRate = 1;   // fast-forwarding stops at live
+    }
+  };
   const skip = (secs: number) => {
     const v = video.current;
-    if (v && v.duration) v.currentTime = Math.min(v.duration - 0.1, Math.max(0, v.currentTime + secs));
+    if (!v || !v.duration) return;
+    // forward only as far as live; back only to the start of what's buffered (the clip's start)
+    const s = Math.max(-v.currentTime, Math.min(secs, behind.current));
+    v.currentTime = Math.min(v.duration - 0.1, v.currentTime + s);
+    behind.current = Math.min(v.duration, behind.current - s);
   };
   const startHold = (side: -1 | 1) => {
     const v = video.current;
@@ -389,8 +406,9 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
   const seekTo = (e: { clientX: number; clientY: number }) => {
     const v = video.current, r = barRef.current?.getBoundingClientRect();
     if (!v || !r || !v.duration) return;
+    // the bar's right end is live; its length covers one clip's worth of time behind it
     const f = along(e, r);
-    v.currentTime = f * v.duration;
+    skip(behind.current - (1 - f) * v.duration);
     setTime({ t: v.currentTime, d: v.duration });
   };
   const onSeekDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -406,6 +424,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
 
   const pick = (i: number) => {
     setLikeFx(null); setCur(i); setPlaying(true); setTime({ t: 0, d: 0 }); setStarted(false); setHold(0); setScrubbing(false); clearInterval(rewinder.current);
+    goLive();
     setRecent(r => [i, ...r.filter(x => x !== i)].slice(0, 8));
   };
 
@@ -438,7 +457,8 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
     setLikeFx({ on: !fav, key: Date.now() });
     setFavs(f => { const n = new Set(f); n.has(cur) ? n.delete(cur) : n.add(cur); return n; });
   };
-  const played = time.d ? time.t / time.d : 0;
+  // how full the bar is: all of it at live, less the further behind live (a live-only channel is always full)
+  const played = time.d ? Math.max(0, 1 - behind.current / time.d) : 1;
 
   return (
     // full screen: above the nav (and the phone frame's status bar)
@@ -463,13 +483,16 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
         {ch.video
           ? <video key={ch.video} ref={video} src={ch.video} poster={ch.poster} autoPlay loop muted={muted} playsInline
               className="absolute" style={{ ...(full && epg ? { left: 0, top: 0, width: boxW, height: boxH } : { inset: 0, width: "100%", height: "100%" }), objectFit: full ? "contain" : "cover", filter: bright < 1 ? `brightness(${bright})` : undefined }}
-              onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onPlaying={() => setStarted(true)}
+              onPlay={() => { if (pausedAt.current) behind.current += (performance.now() - pausedAt.current) / 1000; pausedAt.current = 0; lastTick.current = performance.now(); setPlaying(true); }}
+              onPause={() => { pausedAt.current = performance.now(); setPlaying(false); }} onPlaying={() => setStarted(true)}
               onLoadedMetadata={e => {
                 const v = e.currentTarget;
                 if (resumeAt.current) { v.currentTime = Math.min(resumeAt.current, (v.duration || 1) - 0.1); resumeAt.current = 0; }
+                // a channel starts (or resumes) live
+                goLive();
                 setTime({ t: v.currentTime, d: v.duration || 0 });
               }}
-              onTimeUpdate={e => setTime({ t: e.currentTarget.currentTime, d: e.currentTarget.duration || 0 })} />
+              onTimeUpdate={e => { const v = e.currentTarget; onTick(v); setTime({ t: v.currentTime, d: v.duration || 0 }); }} />
           : <img key={ch.poster} src={ch.poster} alt="" className="absolute" style={{ ...(full && epg ? { left: 0, top: 0, width: boxW, height: boxH } : { inset: 0, width: "100%", height: "100%" }), objectFit: full ? "contain" : "cover", filter: bright < 1 ? `brightness(${bright})` : undefined }} />}
 
         {full && epg && (
