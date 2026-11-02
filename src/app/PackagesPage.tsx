@@ -72,7 +72,7 @@ const PACKAGES: Record<Kind, Pkg[]> = {
       logos: [logoNetflix, logoHbo, logoHotstar, MX], more: 0, channels: 0, screens: 4, note: "Hollywood, Asian & Thai movies",
       sub: [], league: [], apps: ["Netflix", "HBO Max", "Disney+", "MONOMAX"], duration: ["Monthly", "Yearly"] },
     { t: "Netflix Standard", img: a("posters_portrait/John.jpg"), price: "419", cats: ["Netflix"],
-      logos: [logoNetflix], more: 0, channels: 0, screens: 2, note: "Netflix series & films",
+      logos: [logoNetflix], more: 0, channels: 0, screens: 2, note: "Netflix series & movies",
       sub: [], league: [], apps: ["Netflix"], duration: ["Monthly"] },
     { t: "HBO Max", img: a("posters_portrait/House.jpg"), price: "159", cats: ["HBO Max"],
       logos: [logoHbo], more: 0, channels: 0, screens: 2, note: "HBO Originals & Warner Bros. movies",
@@ -247,7 +247,7 @@ function PackageCard({ p, onView }: { p: Pkg; onView: () => void }) {
               <span style={{ fontSize: 22, fontWeight: p.best ? 700 : 400, lineHeight: "28px", color: "#fff" }}>{p.price} baht</span>
               <span style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.15, color: ON_SURFACE }}>/ Month</span>
             </span>
-            <span style={{ fontSize: 11, lineHeight: "16px", letterSpacing: 0.4, color: ON_SURFACE }}>Exclude VAT</span>
+            <span style={{ fontSize: 11, lineHeight: "16px", letterSpacing: 0.4, color: ON_SURFACE }}>Excludes VAT</span>
           </div>
           <button onClick={onView} className="shrink-0 flex items-center justify-center rounded-[10px] px-4" style={{ width: 132, minHeight: 48, background: ON_SURFACE }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#282828" }}>View details</span>

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, Cast, Settings, Heart, Pause, Play, PictureInPicture2, Maximize, History } from "lucide-react";
+import { ChevronLeft, Cast, Settings, Heart, Pause, Play, PictureInPicture2, Maximize, History, X } from "lucide-react";
 import iconCrown from "../assets/shorts/crown.svg";
 import iconShare from "../assets/shorts/share-arrow.svg";
 import iconCrownOwned from "../assets/shorts/crown-owned.svg";
@@ -14,19 +14,18 @@ import iconFullPip from "../assets/full/pip.svg";
 import TVShareSheet from "./TVShareSheet";
 import iconBell from "../assets/epg/bell.svg";
 import iconBellOn from "../assets/epg/bell-filled.svg";
-import iconTimeshiftSmall from "../assets/epg/timeshift.svg";
-import { PAGE_BG, BG, PANEL, PANEL_SOLID, OUTLINE, ON_SURFACE, ON_VARIANT, LIVE, PROGRESS, PILL, PILL_RING, CHIP_BG, CHIP_BORDER, GLASS_CARD_ON } from "./theme";
+import iconAllPrograms from "../assets/epg/all-programs.svg";
+import { PAGE_BG, BG, PANEL, PANEL_SOLID, OUTLINE, ON_SURFACE, ON_VARIANT, LIVE, PROGRESS, PILL, PILL_RING, GLASS_CARD_ON } from "./theme";
 
 // ─── TV tab (Figma "PLAY-player": Mobile_PortraitPlay_Default_TVonmobile 1871:78141, Sticky Browse CH 1871:78788) ───
 // Live TV on the phone: the channel plays in a 16:9 player pinned under the status bar; below it the programme info
-// and the Browse Channels / All Programs buttons scroll away, and the category tabs stick under the player
-// ("Sticky Browse CH") while the channel list scrolls on. The Figma frames are wireframes; they're dressed in the
+// scrolls away and the category tabs stick under the player ("Sticky Browse CH") while the channel list scrolls on;
+// a floating button, bottom right, opens All Program Guide. The Figma frames are wireframes; they're dressed in the
 // app's own dark theme and filled with the channels and artwork the Home tab already uses.
 
 const BASE = import.meta.env.BASE_URL;
 const a = (path: string) => `${BASE}${path}`;
 const FONT = "'Open Sans', sans-serif";
-const SUCCESS = "#59d478";
 
 export const CATEGORIES = ["All Channels", "Recently Watched", "Favorite", "Digital TV", "Sports", "Movies & Series", "News", "Cartoons", "Variety", "Others"];
 
@@ -40,7 +39,7 @@ export interface Channel {
   // timeshift: the programme can be rewound / fast-forwarded (catch-up icon in the list, seekable player)
   timeshift?: boolean;
   // Premium crowns: a plain crown is a premium channel not in the viewer's packages (free preview only, with the
-  // countdown and Explore Package in the player); owned: its package is bought, so it plays in full (crown + play mark)
+  // countdown and Explore Packages in the player); owned: its package is bought, so it plays in full (crown + play mark)
   owned?: boolean;
 }
 const PREMIUM_AND_SPORTS: Channel[] = [
@@ -101,8 +100,8 @@ const THAI: Channel[] = [
 export const CHANNELS: Channel[] = [...THAI, ...PREMIUM_AND_SPORTS].sort((x, y) => Number(x.no) - Number(y.no));
 const indexOf = (no: string) => CHANNELS.findIndex(c => c.no === no);
 
-// recently watched and favourites, kept here so they survive leaving the TV page (PiP, Browse Channels) and coming back
-// recently watched, favourites, the category tab and programme reminders ("channel-start"), shared by the TV page, Browse Channels and All Program Guide
+// recently watched and favourites, kept here so they survive leaving the TV page (PiP, All Program Guide) and coming back
+// recently watched, favourites, the category tab and programme reminders ("channel-start"), shared by the TV page and All Program Guide
 // (kept here so they survive leaving the TV page for those pages or the PiP mini-player and coming back)
 export const tvStore = { recent: [indexOf("902")], favs: new Set([indexOf("902"), indexOf("251")]), cat: "All Channels", reminders: new Set<string>() };
 
@@ -116,7 +115,7 @@ const SHOWS: Record<Cat, string[]> = {
   News: ["Headlines", "World Report", "Business Update", "News Hour", "Debate Live", "Weather & Traffic", "Night News"],
   Cartoons: ["Cartoon Morning", "Animal Friends", "Learn & Play", "Super Heroes", "Toon Time", "Story Hour", "Bedtime Tales"],
   Variety: ["Game Show", "Music Live", "Cooking Battle", "Comedy Hour", "Talent Show", "Talk Show", "Concert Special"],
-  Others: ["Programme", "Special Feature", "Documentary", "Magazine Show", "Replay", "Community Hour", "Night Programme"],
+  Others: ["Program", "Special Feature", "Documentary", "Magazine Show", "Replay", "Community Hour", "Night Program"],
 };
 export const nowMinutes = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
 export const clock = (m: number) => { const t = ((m % 1440) + 1440) % 1440; return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`; };
@@ -146,13 +145,13 @@ const TAGS: Record<string, string[]> = {
 };
 const tagged = (t: string) => (c: Channel) => (TAGS[c.no] ?? []).includes(t);
 
-// sub filters under a category tab (Browse Channels, All Program Guide), "All" first: only Sports and Others
+// sub filters under a category tab (All Program Guide), "All" first: only Sports and Others
 export const SUBFILTERS: Partial<Record<string, { label: string; test: (c: Channel) => boolean }[]>> = {
   Sports: ["Multi-Sports", "Football", "Motorsport", "Golf", "Basketball", "Tennis", "Rugby", "Boxing"].map(t => ({ label: t, test: tagged(t) })),
   Others: ["Education", "Documentary", "Shopping"].map(t => ({ label: t, test: tagged(t) })),
 };
 
-// the channels under a category tab (TV page list, Browse Channels grid, All Program Guide), optionally narrowed
+// the channels under a category tab (TV page list, All Program Guide), optionally narrowed
 // by one of its sub filters
 export const channelsFor = (cat: string, recent: number[], favs: Set<number>, sub = "All") => {
   const all = CHANNELS.map((c, i) => ({ c, i }));
@@ -177,11 +176,11 @@ const fmt = (s: number) => {
 // where the TV page picks up: the channel and playback position (from the PiP mini-player, or a fresh start)
 export interface TVPos { cur: number; t: number }
 
-export default function TVScreen({ topInset, bottom, muted, start, onBack, onBrowse, onPrograms, onOpenStore, onShare, onToast }: {
+export default function TVScreen({ topInset, bottom, muted, start, onBack, onPrograms, onOpenStore, onShare, onToast }: {
   topInset: string; bottom: string; muted: boolean; start?: TVPos | null; onShare: (ch: Channel) => void;
-  // Browse Channels / All Programs open their own pages, the channel carrying on in the PiP mini-player meanwhile
-  onBrowse: (pos: TVPos) => void; onPrograms: (pos: TVPos) => void;
-  // Explore Package (free preview) opens the Store the same way
+  // the floating button opens All Program Guide, the channel carrying on in the PiP mini-player meanwhile
+  onPrograms: (pos: TVPos) => void;
+  // Explore Packages (free preview) opens the Store the same way
   onOpenStore: (pos: TVPos) => void;
   // Back and the PiP button both leave for Home, handing over what's playing so it carries on in the mini-player
   onBack: (pos: TVPos) => void; onToast: (msg: string) => void;
@@ -432,7 +431,6 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
 
   const scroller = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
-  const browse = () => onBrowse({ cur, t: video.current?.currentTime ?? 0 });
   // on opening, bring the channel playing into view in the list: centred in the space under the docked tabs (if
   // it's already on screen, nothing moves)
   useEffect(() => {
@@ -539,7 +537,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
             </div>
           </div>
         </div>}
-        {/* free preview / Explore Package: stays on screen while the rest of the controls are hidden, sliding down
+        {/* free preview / Explore Packages: stays on screen while the rest of the controls are hidden, sliding down
             to 8px above the 3px seek bar */}
         {ch.premium && !ch.owned && !(full && epg) && (
           <div className="absolute inset-x-0 flex items-end justify-between px-4 pb-2"
@@ -553,7 +551,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
             </span>
             <button onClick={e => { e.stopPropagation(); exitFull(); onOpenStore({ cur, t: video.current?.currentTime ?? 0 }); }}
               className="flex items-center gap-1 rounded-[4px]" style={{ height: full ? 40 : 32, padding: full ? "0 12px" : "0 8px", background: PILL, boxShadow: PILL_RING, color: "#fff", fontSize: full ? 14 : 10, fontWeight: 600, textShadow: "0 1px 3px rgba(0,0,0,.35)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
-              <img src={iconCrown} alt="" style={{ width: full ? 18 : 14, height: full ? 18 : 14, filter: "brightness(0)" }} />Explore Package
+              <img src={iconCrown} alt="" style={{ width: full ? 18 : 14, height: full ? 18 : 14, filter: "brightness(0)" }} />Explore Packages
             </button>
           </div>
         )}
@@ -642,14 +640,6 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
           </div>
         </div>
 
-        {/* Browse Channels / All Programs (Figma "Mobile / Button general", Blur) */}
-        <div className="flex gap-[10px] px-4 pt-4">
-          {[["Browse Channels", browse], ["All Programs", () => onPrograms({ cur, t: video.current?.currentTime ?? 0 })]].map(([t, fn]) => (
-            <button key={t as string} onClick={fn as () => void} className="flex-1 rounded-[10px]"
-              style={{ minHeight: 40, fontSize: 14, fontWeight: 700, color: "#fff", background: CHIP_BG, border: `1px solid ${CHIP_BORDER}`, boxShadow: "0 4px 8px rgba(0,0,0,0.2)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>{t as string}</button>
-          ))}
-        </div>
-
         {/* category tabs: stick under the player once the info above has scrolled away */}
         <div ref={tabsRef} className="sticky top-0 z-10 pt-2" style={{ background: BG, borderBottom: `1px solid ${OUTLINE}` }}>
           <div className="tv-rail flex gap-2 overflow-x-auto px-4">
@@ -664,7 +654,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
         </div>
 
         {/* channel list: the one playing is highlighted and tagged Watching */}
-        <div className="flex flex-col pb-4" style={{ minHeight: "100%" }}>
+        <div className="flex flex-col" style={{ minHeight: "100%", paddingBottom: 88 }}>
           {list.length === 0 && <p className="m-0 p-6 text-center" style={{ fontSize: 14, color: ON_VARIANT }}>No channels here yet</p>}
           {list.map(({ c, i }) => {
             const on = i === cur;
@@ -683,14 +673,14 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
                     <span className="truncate" style={{ fontSize: 12, color: ON_VARIANT }}>{c.name}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end justify-between shrink-0" style={{ height: 46, width: 54 }}>
+                <div className="flex flex-col items-end justify-between shrink-0" style={{ height: 46, width: 70 }}>
                   {c.timeshift ? (
                     <span role="button" aria-label={`Time shift: ${c.name}`} onClick={e => { e.stopPropagation(); demo(`Time shift: ${c.name}`); }}>
                       <History size={16} color={ON_VARIANT} />
                     </span>
                   ) : <span />}
                   {on && (
-                    <span className="flex items-center justify-center rounded-[2px]" style={{ height: 16, padding: "0 4px", fontSize: 10, fontWeight: 600, background: SUCCESS, color: "#0b2a14" }}>Watching</span>
+                    <WatchingTag playing={playing} />
                   )}
                 </div>
               </button>
@@ -698,6 +688,15 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onBro
           })}
         </div>
       </div>
+
+      {/* All Programs: floats over the channel list, bottom right */}
+      {!full && (
+        <button onClick={() => onPrograms({ cur, t: video.current?.currentTime ?? 0 })} aria-label="All Programs"
+          className="absolute right-4 bottom-4 z-20 w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          style={{ background: PILL, boxShadow: `${PILL_RING}, 0 8px 20px rgba(0,0,0,0.45)`, backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+          <img src={iconAllPrograms} alt="" width={24} height={24} className="block" />
+        </button>
+      )}
       <style>{`.tv-scroll{scrollbar-width:none}.tv-scroll::-webkit-scrollbar,.tv-rail::-webkit-scrollbar{display:none}.tv-rail{scrollbar-width:none}
         .tv-fade{animation:tv-fade .15s ease-out}
         .tv-like-pop{animation:tv-like-pop .5s cubic-bezier(.2,0,0,1)}
@@ -716,6 +715,23 @@ export function Crown({ c, size }: { c: Channel; size: number }) {
   return c.owned
     ? <img src={iconCrownOwned} alt="Premium, package bought" style={{ width: size, height: size * 17 / 16 }} />
     : <img src={iconCrown} alt="Premium, free preview" style={{ width: size, height: size }} />;
+}
+
+// the 9-bar waveform in the tag ripples out from the middle while the channel plays, and rests in full when paused
+const WAVE = [4, 7, 10.3, 16.6, 24, 16.6, 10.3, 7, 4];
+function WatchingTag({ playing, className = "" }: { playing: boolean; className?: string }) {
+  return (
+    <span className={`${className} shrink-0 flex items-center justify-center gap-[2px] rounded-[2px]`} style={{ height: 16, padding: "0 4px", fontSize: 10, fontWeight: 600, background: LIVE, color: "#fff" }}>
+      <svg width={14} height={14} viewBox="0 0 24 24" fill="#fff" aria-hidden>
+        {WAVE.map((h, i) => (
+          <rect key={i} className={playing ? "tv-wave" : undefined} x={12 + (i - 4) * 2.6 - 0.7} y={12 - h / 2} width={1.4} height={h} rx={0.7}
+            style={{ transformOrigin: "12px 12px", animationDelay: `${Math.abs(i - 4) * 0.12 - 1}s` }} />
+        ))}
+      </svg>
+      Watching
+      <style>{`.tv-wave{animation:tv-wave .9s ease-in-out infinite}@keyframes tv-wave{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}@media (prefers-reduced-motion:reduce){.tv-wave{animation:none}}`}</style>
+    </span>
+  );
 }
 
 export function ChannelLogo({ c, size }: { c: Channel; size: number }) {
@@ -857,8 +873,9 @@ function VSlider({ side, icon, label, value, up, onChange, onEnd }: {
 // ─── Mini EPG, full-screen landscape (Figma Mobile_LandscapeMiniEPG_Default) ──────────────────────────────────────
 // The player in a box at the top left with its controls (back to the full player; heart / share / cast / settings;
 // seek bar, time, PiP, leave full screen); under it "Up Next:", the channel's programmes (the one on air outlined,
-// later ones with a reminder bell); on the right the category tabs and the channel list — the same channels, tab,
-// crowns, time shift and "Watching" tag as the TV page. Tapping a channel switches to it here.
+// later ones with a reminder bell); on the right the category tabs with a close button (back to the full player) and
+// the channel list — the same channels, tab, crowns and "Watching" tag as the TV page, without the time-shift mark so
+// the titles get the room. Tapping a channel switches to it here.
 function MiniEpg(p: {
   ch: Channel; cur: number; boxW: number; boxH: number; panelW: number; playing: boolean; seekable: boolean; started: boolean;
   t: number; played: number; scrubbing: boolean; fav: boolean; barRef: React.RefObject<HTMLDivElement>; recent: number[]; favs: Set<number>;
@@ -937,10 +954,7 @@ function MiniEpg(p: {
                 <span className="truncate w-full" style={{ fontSize: 14, lineHeight: "18px", color: ON_SURFACE }}>{x.title}</span>
                 <span className="flex items-center justify-between w-full">
                   <span style={{ fontSize: 12, color: ON_VARIANT }}>{clock(x.start)} - {clock(x.end)}</span>
-                  <span className="flex items-center gap-3">
-                    {p.ch.timeshift && <img src={iconTimeshiftSmall} alt="Time shift" width={16} height={16} />}
-                    {!onAir && <img key={reminded ? `on-${key === rung}` : "off"} src={reminded ? iconBellOn : iconBell} alt={reminded ? "Reminder set" : "Add reminder"} width={16} height={16} className={reminded && key === rung ? "tv-ring" : undefined} />}
-                  </span>
+                  {!onAir && <img key={reminded ? `on-${key === rung}` : "off"} src={reminded ? iconBellOn : iconBell} alt={reminded ? "Reminder set" : "Add reminder"} width={16} height={16} className={reminded && key === rung ? "tv-ring" : undefined} />}
                 </span>
               </button>
             );
@@ -958,10 +972,12 @@ function MiniEpg(p: {
                 {c === cat && <span className="absolute left-2 right-2 bottom-0 h-[3px] rounded-[1.5px] bg-white" />}
               </button>
             ))}
-            <span className="shrink-0" style={{ width: 40 }} />
+            <span className="shrink-0" style={{ width: 56 }} />
           </div>
-          {/* the tabs fade out at the right edge */}
-          <div className="absolute right-0 top-0 bottom-0 pointer-events-none" style={{ width: 56, background: "linear-gradient(270deg, #0d141d 22%, rgba(13,20,29,0))" }} />
+          {/* the tabs fade out under the close button at the right edge */}
+          <div className="absolute right-0 top-0 bottom-0 flex items-center justify-end pr-1 pointer-events-none" style={{ width: 76, background: "linear-gradient(270deg, #0d141d 62%, rgba(13,20,29,0))" }}>
+            <button onClick={stop(p.onBack)} aria-label="Close channel list" className={`${icon40} pointer-events-auto`}><X size={24} color="#fff" /></button>
+          </div>
         </div>
         <div ref={listRef} className="tv-scroll flex-1 overflow-y-auto pb-8">
           {list.length === 0 && <p className="m-0 p-6 text-center" style={{ fontSize: 14, color: ON_VARIANT }}>No channels here yet</p>}
@@ -971,18 +987,15 @@ function MiniEpg(p: {
               <button key={`${cat}-${i}`} onClick={() => p.onPick(i)} data-watching={on || undefined} className="w-full flex items-center gap-2 text-left"
                 style={{ padding: "16px 16px 16px 12px", background: on ? GLASS_CARD_ON : "transparent" }}>
                 <ChannelLogo c={c} size={40} />
-                <div className="flex flex-1 flex-col gap-[2px] min-w-0">
+                <div className="flex flex-1 flex-col gap-[6px] min-w-0">
                   <span className="truncate" style={{ fontSize: 14, lineHeight: "18px", color: ON_SURFACE }}>{c.program}</span>
                   <div className="flex items-center gap-2 min-w-0">
                     {c.premium && <Crown c={c} size={16} />}
                     <span className="shrink-0 rounded-[4px] px-1 text-center text-white" style={{ minWidth: 28, fontSize: 10, lineHeight: "20px", fontWeight: 600, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{c.no}</span>
                     <span className="shrink-0" style={{ width: 1, height: 14, background: "#4a4a4a" }} />
                     <span className="truncate" style={{ fontSize: 12, color: ON_VARIANT }}>{c.name}</span>
+                    {on && <WatchingTag playing={p.playing} className="ml-auto" />}
                   </div>
-                </div>
-                <div className="flex flex-col items-end justify-between shrink-0 self-stretch" style={{ width: on ? 54 : 26 }}>
-                  {c.timeshift ? <History size={16} color={ON_VARIANT} /> : <span />}
-                  {on && <span className="flex items-center justify-center rounded-[2px]" style={{ height: 16, padding: "0 4px", fontSize: 10, fontWeight: 600, background: "#59d478", color: "#0b2a14" }}>Watching</span>}
                 </div>
               </button>
             );

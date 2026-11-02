@@ -4,13 +4,13 @@ import iconTimeshift from "../assets/epg/timeshift.svg";
 import iconBell from "../assets/epg/bell.svg";
 import iconBellOn from "../assets/epg/bell-filled.svg";
 import { CHANNELS, ChannelLogo, Crown, channelsFor, clock, nowMinutes, scheduleFor, tvStore, type Programme } from "./TVScreen";
-import { FONT, SubFilters, TVSubHeader, subLine, useSubPageScroll, useTVCategory } from "./BrowseChannels";
+import { FONT, SubFilters, TVSubHeader, subLine, useSubPageScroll, useTVCategory } from "./TVSubHeader";
 import DateTimeSheet, { guideLabel, type GuideTime } from "./DateTimeSheet";
 import { PAGE_BG, ON_SURFACE, ON_VARIANT, LIVE } from "./theme";
 
 // ─── All Program Guide (Figma "PLAY-player" All Program, node 1921:75487) ────────────────────────────────────────
-// Opened from the TV page's All Programs button (the channel keeps playing in the PiP mini-player): the same
-// header and category tabs as Browse Channels, a date / time pill, then one row per channel — its badge (logo,
+// Opened from the TV page's floating button (the channel keeps playing in the PiP mini-player): a back arrow and
+// title, the same category tabs as the TV page, a date / time pill, then one row per channel — its badge (logo,
 // crown, number) and its programmes as 243px cards that scroll sideways: the one on air, then what's next (finished
 // ones aren't shown). The programme you're watching (on air on the channel playing) is outlined, with animated
 // sound bars; on a time-shift channel every programme carries the time-shift mark (up next: the bell to its right).
@@ -28,7 +28,7 @@ export default function AllPrograms({ topInset, bottom, watching, onBack, onPick
   const list = useMemo(() => channelsFor(cat, tvStore.recent, tvStore.favs, sub), [cat, sub]);
   const now = nowMinutes();
   const { headerH, setHeaderH, scrolled, docked, folded, unfold, onScroll, scroller } = useSubPageScroll();
-  const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const today = new Date().toLocaleDateString("en-US", { day: "numeric", month: "short" });
   // the moment the guide shows: now, or a day / hour picked in the Date & Time sheet (minutes from midnight today)
   const [at, setAt] = useState<GuideTime | null>(null);
   const [picking, setPicking] = useState(false);

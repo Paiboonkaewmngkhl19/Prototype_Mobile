@@ -9,7 +9,7 @@ import { PAGE_BG, ON_SURFACE, ON_VARIANT, GLASS_CARD, CHIP_BORDER, OUTLINE } fro
 // ─── My Account (Figma "PLAY profile & settings", myAccount_notLinked 256:36034) ─────────────────────────────────
 // Opened from My Account on the Profile card: back + "My Account", the account card (avatar, name with edit, account
 // number, AIS Fibre, Not Linked, Link myAIS Account), Account Info (registered name, contact number and email with
-// edit, Manage Billing, History Payment), Manage Subscription (My Subscription, Redeem), Settings and Delete Account.
+// edit, Manage Billing, Payment History), Manage Subscription (My Subscription, Redeem), Settings and Delete Account.
 // In the app's theme.
 
 const FONT = "'Open Sans', sans-serif";
@@ -22,7 +22,7 @@ const ACCOUNT_INFO: Row[] = [
   { label: "Contact Number", value: "081 XXX XXXX", edit: true },
   { label: "Email", value: "-", edit: true },
   { label: "Manage Billing" },
-  { label: "History Payment" },
+  { label: "Payment History" },
 ];
 const SUBSCRIPTION: Row[] = [{ label: "My Subscription" }, { label: "Redeem" }];
 

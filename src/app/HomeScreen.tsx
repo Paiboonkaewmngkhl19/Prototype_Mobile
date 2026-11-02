@@ -46,7 +46,7 @@ const CONTINUE = [
   { t: "Young Sherlock S1:E1", img: a("posters/continue/c1.jpg"), plat: "prime", left: 27, pct: 62 },
   { t: "Avengers: Endgame", img: a("posters/continue/c2.jpg"), plat: "disney", left: 48, pct: 70 },
   { t: "Superman", img: a("posters/continue/c3.jpg"), plat: "hbo", left: 35, pct: 55 },
-  { t: "All Or Nothing: Brazil National Team", img: a("posters/continue/c4.jpg"), plat: "netflix", left: 18, pct: 80 },
+  { t: "All or Nothing: Brazil National Team", img: a("posters/continue/c4.jpg"), plat: "netflix", left: 18, pct: 80 },
   { t: "Project Hail Mary", img: a("posters/continue/c5.jpg"), plat: "netflix", left: 64, pct: 40 },
 ];
 
@@ -55,7 +55,7 @@ const UPCOMING = [
   { t: "Liverpool vs Brentford", sub: "Premier League", img: a("posters/upcoming/live.jpg"), live: true },
   { t: "Leipzig vs Gladbach", sub: "Bundesliga", img: a("posters/upcoming/u2.jpg"), badge: "Today 20:30", premium: true },
   { t: "Dortmund vs Hamburg", sub: "Bundesliga", img: a("posters/upcoming/u3.jpg"), badge: "Today 20:30" },
-  { t: "Masterchef Thailand", sub: "Season 7", img: a("posters/upcoming/u1.jpg"), badge: "Start in 58:12" },
+  { t: "MasterChef Thailand", sub: "Season 7", img: a("posters/upcoming/u1.jpg"), badge: "Starts in 58:12" },
   { t: "CT14 Eala vs Jovic (R1)", sub: "WTA Tour", img: a("posters/upcoming/u4.png"), badge: "Tomorrow 6:00 PM" },
 ];
 
@@ -74,7 +74,7 @@ const EXCLUSIVE = [
 ];
 
 // ── Home rails added in the Figma redesign (Home file, PLAY:Home_fullPageAfterWatched 1063:111194) ──
-// Wireframe slots, filled with the artwork the app already has. tag: the badge on top (New / Top 10 / Soon leaving);
+// Wireframe slots, filled with the artwork the app already has. tag: the badge on top (New / Top 10 / Leaving Soon);
 // netflix: the Netflix pill at the bottom left.
 type Poster = { img: string; t: string; tag?: string; netflix?: boolean };
 const P = (f: string) => a(f);
@@ -92,10 +92,10 @@ const posterRail = (from: number, tags: (string | undefined)[], netflix: number[
     return { img: POSTERS[i], t: TITLES[i], tag: tags[k], netflix: netflix.includes(k) };
   });
 const NEW_RELEASE = posterRail(3, [undefined, "New", undefined, "New"]);
-const RAY = posterRail(6, [undefined, "Soon leaving"], [0, 3]);
-const LOVE = posterRail(1, [undefined, "Soon leaving"], [2]);
+const RAY = posterRail(6, [undefined, "Leaving Soon"], [0, 3]);
+const LOVE = posterRail(1, [undefined, "Leaving Soon"], [2]);
 const CHILL = posterRail(9, [undefined, "New"], [0]);
-const BECAUSE = posterRail(5, [undefined, undefined, "Soon leaving"], [0]);
+const BECAUSE = posterRail(5, [undefined, undefined, "Leaving Soon"], [0]);
 const FOR_YOU = [7, 0, 4, 8, 2].map(i => ({ img: POSTERS[i], t: TITLES[i] }));
 const MY_LIST = [
   { img: P("posters/continue/c2.jpg"), t: "Avengers: Endgame" }, { img: P("posters/continue/c5.jpg"), t: "Project Hail Mary" },
@@ -113,9 +113,9 @@ const KARAOKE = [
 ];
 const QUICK = [
   { t: "Manage Subscription", icon: iconQaSubscription }, { t: "FAQs", icon: iconQaFaqs, grow: true },
-  { t: "My rental", icon: iconQaRental, w: 119 }, { t: "Setting", icon: iconQaSetting, grow: true },
+  { t: "My Rentals", icon: iconQaRental, w: 119 }, { t: "Settings", icon: iconQaSetting, grow: true },
 ];
-// Hot Channel Program: what's on now on the TV channels that have their own picture
+// Hot Channel Programs: what's on now on the TV channels that have their own picture
 const HOT_PROGRAM = TV_CHANNELS.map((c, i) => ({ c, i })).filter(x => x.c.logo && !x.c.short).slice(0, 8);
 
 // top tabs; "For you" is the Home page, "Sports" the Sport page, the rest are demos for now
@@ -137,7 +137,7 @@ const SPORT_SLIDES: Slide[] = [
 // ── Sport tab rails (Figma "Sports" file, AIS PLAY: sport_mainFullPage 2544:38144) ──
 // League & Tournament: the six logos from Figma, then crest circles for the rest; fav: heart badge
 const LEAGUES: { t: string; img?: string; fit?: "cover" | "contain"; white?: boolean; short?: string; bg?: string; fg?: string; fav?: boolean }[] = [
-  { t: "UEFA Champion League", img: lgUcl, fav: true },
+  { t: "UEFA Champions League", img: lgUcl, fav: true },
   { t: "Premier League", img: lgPl, fit: "contain", fav: true },
   { t: "Bundesliga", img: lgBundesliga, fit: "contain", white: true, fav: true },
   { t: "FA Cup", img: lgFaCup, fav: true },
@@ -149,10 +149,10 @@ const LEAGUES: { t: string; img?: string; fit?: "cover" | "contain"; white?: boo
 ];
 type Clip = { img: string; t: string; d?: string; live?: boolean };
 const LATEST: Clip[] = [
-  { img: a("tv-features-test/live-stream-assets/football-180.jpg"), t: "Como vs Man United Highlight", d: "6m" },
+  { img: a("tv-features-test/live-stream-assets/football-180.jpg"), t: "Como vs Man United Highlights", d: "6m" },
   { img: a("posters/SC.jpg"), t: "Timberwolves vs Heat Full Game Highlights", d: "18m" },
-  { img: a("tv-features-test/live-stream-assets/football-024.jpg"), t: "Japan vs Thailand Highlight", d: "8m" },
-  { img: a("tv-features-test/shorts-assets/volleyball.jpg"), t: "Thailand vs China Volleyball Highlight", d: "12m" },
+  { img: a("tv-features-test/live-stream-assets/football-024.jpg"), t: "Japan vs Thailand Highlights", d: "8m" },
+  { img: a("tv-features-test/shorts-assets/volleyball.jpg"), t: "Thailand vs China Volleyball Highlights", d: "12m" },
 ];
 const UCL: Clip[] = [
   { img: a("posters/arsenal.jpg"), t: "Bayern München vs Arsenal", live: true },
@@ -161,9 +161,9 @@ const UCL: Clip[] = [
   { img: a("tv-features-test/live-stream-assets/football-109.jpg"), t: "Inter vs Bayern Highlights", d: "6m" },
 ];
 const FOOTBALL_FY: Clip[] = [
-  { img: a("tv-features-test/live-stream-assets/football-190.jpg"), t: "Como vs Man United Highlight", d: "6m" },
+  { img: a("tv-features-test/live-stream-assets/football-190.jpg"), t: "Como vs Man United Highlights", d: "6m" },
   { img: a("posters/upcoming/live.jpg"), t: "Paris Saint-Germain vs Barcelona Full Match", d: "95m" },
-  { img: a("posters/arsenal.jpg"), t: "Arsenal vs Chelsea Highlight", d: "9m" },
+  { img: a("posters/arsenal.jpg"), t: "Arsenal vs Chelsea Highlights", d: "9m" },
   { img: a("tv-features-test/live-stream-assets/football-255.jpg"), t: "Japan vs Thailand Full Match", d: "92m" },
 ];
 const BASKETBALL_FY: Clip[] = [
@@ -179,11 +179,11 @@ const MOTORSPORT_FY: Clip[] = [
 const SPORT_CHIPS = ["All", "Football", "Basketball", "Golf", "Tennis", "Badminton", "Motorsport"];
 const DOCUMENTARY = [
   { img: a("posters/maxresdefault.jpg"), pos: "92% center", t: "Sir Alex Ferguson: Never Give In" },
-  { img: a("posters/all.jpg"), pos: "22% center", t: "All Or Nothing: Brazil National Team" },
+  { img: a("posters/all.jpg"), pos: "22% center", t: "All or Nothing: Brazil National Team" },
   { img: a("posters_portrait/F1.jpg"), t: "F1: The Movie" },
   { img: a("posters/f1.jpg"), pos: "30% center", t: "Drive to Survive" },
 ];
-// the TV tab's sports channels (TV Guide and Sport Channel rails)
+// the TV tab's sports channels (TV Guide and Sports Channels rails)
 const SPORT_TV = TV_CHANNELS.map((c, i) => ({ c, i })).filter(x => x.c.cats.includes("Sports"));
 
 export interface ShortThumb { img: string; title: string }
@@ -503,7 +503,7 @@ export default function HomeScreen({
                 <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112 }}>
                   <img src={u.img} alt="" className="w-full h-full object-cover" />
                   <span className="absolute left-3 top-3">
-                    {u.live ? <LivePill /> : <span className="flex items-center rounded-full px-[6px]" style={{ height: 18, fontSize: 11, color: ON_SURFACE, background: "rgba(58,58,58,0.92)" }}>{u.badge}</span>}
+                    {u.live ? <LivePill /> : <span className="flex items-center rounded-full px-[6px]" style={{ height: 18, fontSize: 11, color: "#000", background: "#fff" }}>{u.badge}</span>}
                   </span>
                   {u.premium && <img src={iconCrown} alt="Premium" className="absolute left-3 bottom-2" style={{ width: 20, height: 20 }} />}
                 </div>
@@ -513,8 +513,8 @@ export default function HomeScreen({
             ))}
           </Rail>
 
-          {/* Hot Channel Program: what's on now on TV channels (same data as the TV tab); tapping plays the channel */}
-          <Rail title="Hot Channel Program" gap={16}>
+          {/* Hot Channel Programs: what's on now on TV channels (same data as the TV tab); tapping plays the channel */}
+          <Rail title="Hot Channel Programs" gap={16}>
             {HOT_PROGRAM.map(({ c, i }) => {
               const now = nowMinutes(), on = scheduleFor(i).find(p => p.start <= now && now < p.end);
               return (
@@ -530,11 +530,11 @@ export default function HomeScreen({
             })}
           </Rail>
 
-          {/* New release */}
-          <Rail title="New release" gap={12}>{NEW_RELEASE.map((p, k) => <PosterCard key={k} p={p} onTap={() => demo(p.t)} />)}</Rail>
+          {/* New Releases */}
+          <Rail title="New Releases" gap={12}>{NEW_RELEASE.map((p, k) => <PosterCard key={k} p={p} onTap={() => demo(p.t)} />)}</Rail>
 
           {/* My list */}
-          <Rail title="My list" gap={12}>
+          <Rail title="My List" gap={12}>
             {MY_LIST.map(m => (
               <button key={m.t} onClick={() => demo(m.t)} aria-label={m.t} className="shrink-0 overflow-hidden rounded-[12px]" style={{ width: 200, height: 112 }}>
                 <img src={m.img} alt="" className="w-full h-full object-cover" />
@@ -566,10 +566,10 @@ export default function HomeScreen({
             </div>
           </section>
 
-          {/* AIS Play Exclusive */}
-          <Rail title="AIS Play Exclusive" gap={16}>
+          {/* AIS PLAY Exclusive */}
+          <Rail title="AIS PLAY Exclusive" gap={16}>
             {EXCLUSIVE.map(e => (
-              <button key={e.img} onClick={() => demo("AIS Play Exclusive")} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 250, height: 375 }}>
+              <button key={e.img} onClick={() => demo("AIS PLAY Exclusive")} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 250, height: 375 }}>
                 <img src={e.img} alt="" className="w-full h-full object-cover" />
                 {e.live && <span className="absolute left-3 top-3"><LivePill /></span>}
               </button>
@@ -596,7 +596,7 @@ export default function HomeScreen({
           <Rail title="Ray Macdonald" more onMore={() => demo("Ray Macdonald")} gap={12}>{RAY.map((p, k) => <PosterCard key={k} p={p} onTap={() => demo(p.t)} />)}</Rail>
           <Rail title="We think you'll love this" more onMore={() => demo("We think you'll love this")} gap={12}>{LOVE.map((p, k) => <PosterCard key={k} p={p} onTap={() => demo(p.t)} />)}</Rail>
           <Rail title="ChillZone" more onMore={() => demo("ChillZone")} gap={12}>{CHILL.map((p, k) => <PosterCard key={k} p={p} onTap={() => demo(p.t)} />)}</Rail>
-          <Rail title="Because you watch Squid Game" gap={12}>{BECAUSE.map((p, k) => <PosterCard key={k} p={p} onTap={() => demo(p.t)} />)}</Rail>
+          <Rail title="Because you watched Squid Game" gap={12}>{BECAUSE.map((p, k) => <PosterCard key={k} p={p} onTap={() => demo(p.t)} />)}</Rail>
 
           {/* Seasonal / collection: big posters with their name over the bottom */}
           <Rail title="" gap={12}>
@@ -708,7 +708,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
                   : <span style={{ color: l.fg, fontSize: 20, fontWeight: 800 }}>{l.short}</span>}
               </span>
               {favs.has(l.t) && (
-                <span role="button" aria-label={`Remove ${l.t} from favourites`} onClick={e => { e.stopPropagation(); setFavs(f => { const n = new Set(f); n.delete(l.t); return n; }); }}
+                <span role="button" aria-label={`Remove ${l.t} from favorites`} onClick={e => { e.stopPropagation(); setFavs(f => { const n = new Set(f); n.delete(l.t); return n; }); }}
                   className="absolute flex items-center justify-center rounded-full bg-white" style={{ left: 56, top: 56, width: 32, height: 32 }}>
                   <img src={iconHeartDark} alt="" width={24} height={24} />
                 </span>
@@ -719,8 +719,8 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         ))}
       </Rail>
 
-      {/* Lastest Highlight */}
-      <Rail title="Lastest Highlight" gap={12}>{LATEST.map(c => <ClipCard key={c.t} c={c} onTap={() => demo(c.t)} />)}</Rail>
+      {/* Latest Highlights */}
+      <Rail title="Latest Highlights" gap={12}>{LATEST.map(c => <ClipCard key={c.t} c={c} onTap={() => demo(c.t)} />)}</Rail>
 
       {/* TV Guide: the TV tab's sports channels, two rows that scroll together; tapping plays the channel */}
       <Rail title="TV Guide" more onMore={() => demo("TV Guide")} gap={16}>
@@ -757,15 +757,15 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         ))}
       </Rail>
 
-      {/* UEFA Champion League, over the competition's picture (masked so it blends into any background) */}
+      {/* UEFA Champions League, over the competition's picture (masked so it blends into any background) */}
       <section className="relative flex flex-col gap-3 pb-6" style={{ paddingTop: 60 }}>
         {/* cropped as in Figma (zoomed in on the trophy), the mask on a wrapper so it fades at the section's edges */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ WebkitMaskImage: UCL_FADE, maskImage: UCL_FADE }}>
           <img src={imgUclBg} alt="" className="absolute max-w-none" style={{ width: "223.38%", height: "181.92%", left: "-83.73%", top: "-39.16%", objectFit: "cover" }} />
         </div>
         <div className="relative flex items-center gap-1 px-4">
-          <h3 className="m-0" style={{ fontSize: 18, fontWeight: 400, lineHeight: "24px", color: ON_SURFACE, textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>UEFA Champion League</h3>
-          <button onClick={() => demo("UEFA Champion League")} aria-label="More UEFA Champion League" className="p-1 rounded-full"><ChevronRight size={16} className="text-white" /></button>
+          <h3 className="m-0" style={{ fontSize: 18, fontWeight: 400, lineHeight: "24px", color: ON_SURFACE, textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>UEFA Champions League</h3>
+          <button onClick={() => demo("UEFA Champions League")} aria-label="More UEFA Champions League" className="p-1 rounded-full"><ChevronRight size={16} className="text-white" /></button>
         </div>
         <div className="relative home-rail flex gap-3 overflow-x-auto overflow-y-hidden px-4">
           {UCL.map(c => <ClipCard key={c.t} c={c} onTap={() => demo(c.t)} />)}
@@ -797,8 +797,8 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         ))}
       </Rail>
 
-      {/* Sport Channel: the TV tab's sports channels; tapping plays the channel */}
-      <Rail title="Sport Channel" gap={16}>
+      {/* Sports Channels: the TV tab's sports channels; tapping plays the channel */}
+      <Rail title="Sports Channels" gap={16}>
         {SPORT_TV.map(({ c, i }) => (
           <button key={c.no} onClick={() => onOpenChannel(i)} aria-label={`${c.name}, channel ${c.no}`} className="relative shrink-0 rounded-full" style={{ width: 80, height: 80 }}>
             <ChannelLogo c={c} size={80} />
@@ -819,15 +819,15 @@ function ClipCard({ c, onTap }: { c: Clip; onTap: () => void }) {
       <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112, background: "#3a3a3a" }}>
         <img src={c.img} alt="" className="w-full h-full object-cover" />
         {c.live && <span className="absolute left-3 top-3"><LivePill /></span>}
-        {c.d && <span className="absolute right-[22px] bottom-[10px] rounded-[14px] px-2" style={{ fontSize: 14, fontWeight: 500, color: ON_SURFACE, background: "rgba(58,58,58,0.92)" }}>{c.d}</span>}
+        {c.d && <span className="absolute right-[22px] bottom-[10px] rounded-[14px] px-2" style={{ fontSize: 14, fontWeight: 500, color: "#000", background: "#fff" }}>{c.d}</span>}
       </div>
       <span style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.15, color: ON_SURFACE, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.t}</span>
     </button>
   );
 }
 
-// Store (Figma 3026:209018): a full-width PLAY banner with Explore Package over it (For you and Sports)
-// Store › and Explore Package open the Store page
+// Store (Figma 3026:209018): a full-width PLAY banner with Explore Packages over it (For you and Sports)
+// Store › and Explore Packages open the Store page
 function StoreRail({ onOpen }: { onOpen: () => void }) {
   return (
     <section className="flex flex-col gap-3">
@@ -840,21 +840,21 @@ function StoreRail({ onOpen }: { onOpen: () => void }) {
         <img src={imgStoreBanner} alt="" className="absolute max-w-none" style={{ width: "106.65%", height: "200.86%", left: "-3.33%", top: "-44.17%", objectFit: "cover" }} />
         <button onClick={onOpen} className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center rounded-[10px]"
           style={{ top: 40, width: 300, maxWidth: "calc(100% - 32px)", minHeight: 48, background: "#f0f0f0", boxShadow: "0 4px 4px rgba(0,0,0,0.2)" }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: "#282828" }}>Explore Package</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "#282828" }}>Explore Packages</span>
         </button>
       </div>
     </section>
   );
 }
 
-// a 135 x 202 poster: optional badge on top (New / Top 10 / Soon leaving) and the Netflix pill at the bottom left
+// a 135 x 202 poster: optional badge on top (New / Top 10 / Leaving Soon) and the Netflix pill at the bottom left
 function PosterCard({ p, onTap }: { p: Poster; onTap: () => void }) {
   return (
     <button onClick={onTap} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 135, height: 202, background: "#3a3a3a" }}>
       <img src={p.img} alt="" className="w-full h-full object-cover" />
       {p.tag && (
-        // "Soon leaving" sits centred at the top; the others at the top left
-        <span className="absolute top-[7px] whitespace-nowrap rounded-full px-2" style={{ fontSize: 12, lineHeight: "18px", fontWeight: 500, color: ON_SURFACE, background: "rgba(58,58,58,0.92)", ...(p.tag === "Soon leaving" ? { left: "50%", transform: "translateX(-50%)" } : { left: 8 }) }}>{p.tag}</span>
+        // "Leaving Soon" sits centred at the top; the others at the top left
+        <span className="absolute top-[7px] whitespace-nowrap rounded-full px-2" style={{ fontSize: 12, lineHeight: "18px", fontWeight: 500, color: "#000", background: "#fff", ...(p.tag === "Leaving Soon" ? { left: "50%", transform: "translateX(-50%)" } : { left: 8 }) }}>{p.tag}</span>
       )}
       {p.netflix && <img src={imgNetflix} alt="Netflix" className="absolute left-4 bottom-4 rounded-full object-cover" style={{ width: 35, height: 17 }} />}
     </button>

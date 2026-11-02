@@ -46,7 +46,7 @@ export default function QrSheet({ topInset, amount, account, onPaid, onClose, on
         <div className="qr-scroll flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-6">
           <div className="flex flex-col items-center gap-4">
             <p className="m-0 text-center" style={{ ...big, color: "#fff" }}>
-              After payment via QR<br />you will be charged consecutively to your billing account: <b>{masked}</b>
+              After payment via QR<br />you will be charged on a recurring basis to your billing account: <b>{masked}</b>
             </p>
 
             {/* the QR (Figma crop of the code image) */}

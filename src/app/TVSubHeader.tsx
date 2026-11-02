@@ -1,17 +1,14 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import iconBack from "../assets/browse/back.svg";
-import { CATEGORIES, ChannelLogo, SUBFILTERS, channelsFor, tvStore } from "./TVScreen";
+import { CATEGORIES, SUBFILTERS, tvStore } from "./TVScreen";
 import { FilterChips } from "./HomeScreen";
-import { PAGE_BG, ON_SURFACE, ON_VARIANT, LIVE, headerGlass } from "./theme";
+import { ON_SURFACE, ON_VARIANT, headerGlass } from "./theme";
 
-// ─── Browse Channels (Figma "PLAY-player" Browse CH, node 1921:75125) ─────────────────────────────────────────────
-// Opened from the TV page's Browse Channels button (the channel keeps playing in the PiP mini-player): a back
-// arrow and title, the same category tabs as the TV page (and the same tab selected), then every channel as a
-// 4-column grid of 80px round logos. Tapping one plays it on the TV page; the one playing has a red ring.
+// ─── Header and scrolling for the TV tab's sub page (All Program Guide) ────────────────────────────────────────────
 
 export const FONT = "'Open Sans', sans-serif";
 
-// header shared by Browse Channels and All Program Guide: status bar space, back + title (64px), category tabs.
+// header: status bar space, back + title (64px), category tabs.
 // Like the other pages' headers it floats over the page: a dark fade at the top, then the Home header's glass (a
 // navy tint over a blur of what's underneath) once the page scrolls. Once the page's sub filters scroll up to it,
 // they dock inside it (children). And like the package lists' chips, the tabs (with any docked filters) fold into a
@@ -132,37 +129,4 @@ export function useTVCategory() {
   const [cat, setCat] = useState(tvStore.cat);
   const [sub, setSub] = useState("All");
   return { cat, sub, setSub, setCat: (c: string) => { tvStore.cat = c; setCat(c); setSub("All"); } };
-}
-
-export default function BrowseChannels({ topInset, bottom, watching, onBack, onPick }: {
-  topInset: string; bottom: string; watching?: number; onBack: () => void; onPick: (cur: number) => void;
-}) {
-  const { cat, setCat, sub, setSub } = useTVCategory();
-  const list = useMemo(() => channelsFor(cat, tvStore.recent, tvStore.favs, sub), [cat, sub]);
-  const { headerH, setHeaderH, scrolled, docked, folded, unfold, onScroll, scroller } = useSubPageScroll();
-
-  return (
-    <div className="absolute inset-x-0 top-0 z-[15]" style={{ bottom, background: PAGE_BG, fontFamily: FONT }}>
-      <TVSubHeader topInset={topInset} title="Browse Channels" cat={cat} subtitle={subLine(cat, sub)} scrolled={scrolled} folded={folded} onUnfold={unfold} onCat={setCat} onBack={onBack} onHeight={setHeaderH}>
-        <SubFilters cat={cat} sub={sub} onSub={setSub} docked={docked} inHeader />
-      </TVSubHeader>
-      {/* channel grid: 4 columns, 8px gaps, 16px sides */}
-      <div ref={scroller} className="absolute inset-0 overflow-y-auto tvsub-rail" style={{ paddingTop: headerH }} onScroll={onScroll}>
-        <SubFilters cat={cat} sub={sub} onSub={setSub} docked={docked} />
-        {list.length === 0
-          ? <p className="m-0 p-6 text-center" style={{ fontSize: 14, color: "#a8a8a8" }}>No channels here yet</p>
-          : (
-            <div className="grid grid-cols-4 gap-2 px-4 py-4 justify-items-center">
-              {list.map(({ c, i }) => (
-                <button key={`${cat}-${sub}-${i}`} onClick={() => onPick(i)} data-watching={i === watching || undefined} aria-label={`${c.name}, channel ${c.no}${i === watching ? ", watching" : ""}`}
-                  className="rounded-full active:scale-95 transition-transform"
-                  style={{ boxShadow: i === watching ? `0 0 0 3px ${LIVE}` : "none" }}>
-                  <ChannelLogo c={c} size={80} />
-                </button>
-              ))}
-            </div>
-          )}
-      </div>
-    </div>
-  );
 }

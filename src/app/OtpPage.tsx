@@ -33,7 +33,7 @@ export default function OtpPage({ topInset, bottomInset = "0px", amount, per, ac
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
-  const resend = () => { setCode(""); setWait(RESEND_S); onToast("A new OTP has been sent to myAIS app (demo)"); };
+  const resend = () => { setCode(""); setWait(RESEND_S); onToast("A new OTP has been sent to the myAIS app (demo)"); };
   // 8801234456 → 880XXX4456
   const masked = account.length > 6 ? `${account.slice(0, 3)}XXX${account.slice(-4)}` : account;
   const body = { fontSize: 18, lineHeight: "24px", color: "#fff" };
@@ -54,7 +54,7 @@ export default function OtpPage({ topInset, bottomInset = "0px", amount, per, ac
         <div className="flex flex-col items-center gap-6">
           <p className="m-0 text-center" style={body}>
             You will be charged<br />
-            <b>{amount}</b> /{per} consecutively<br />
+            <b>{amount}</b> /{per} on a recurring basis<br />
             <span style={{ color: ON_SURFACE }}>to your billing account: </span><b>{masked}</b>
           </p>
 
@@ -72,8 +72,8 @@ export default function OtpPage({ topInset, bottomInset = "0px", amount, per, ac
           </div>
 
           <p className="m-0 text-center" style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", color: ON_SURFACE }}>
-            OTP has been sent to myAIS app.<br />
-            {wait > 0 ? <>Did not receive OTP? Resend available in {wait} seconds.</> : <>Did not receive OTP? You can resend it now.</>}
+            OTP has been sent to the myAIS app.<br />
+            {wait > 0 ? <>Didn't receive the OTP? Resend available in {wait} seconds.</> : <>Didn't receive the OTP? You can resend it now.</>}
           </p>
 
           <div className="flex flex-col gap-4 w-full py-4">

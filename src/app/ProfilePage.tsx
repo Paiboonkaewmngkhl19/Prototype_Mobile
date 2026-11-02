@@ -108,7 +108,7 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
                 <span style={{ fontSize: 14, lineHeight: "20px", color: ON_SURFACE }}>+99 Premium Channels</span>
               </div>
             </div>
-            <span className="text-center" style={{ fontSize: 12, lineHeight: "16px", color: ON_SURFACE }}>Renews 22 October</span>
+            <span className="text-center" style={{ fontSize: 12, lineHeight: "16px", color: ON_SURFACE }}>Renews October 22</span>
           </div>
         </section>
 

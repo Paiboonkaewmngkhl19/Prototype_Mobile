@@ -34,8 +34,8 @@ import avatarUser from "../assets/shorts/avatar-user.png";
 import HomeScreen from "./HomeScreen";
 import TVScreen, { CHANNELS as TV_CHANNELS, type TVPos, type Channel } from "./TVScreen";
 import PipPlayer from "./PipPlayer";
+import SplashScreen from "./SplashScreen";
 import TVShareSheet, { SHARE_TARGETS } from "./TVShareSheet";
-import BrowseChannels from "./BrowseChannels";
 import AllPrograms from "./AllPrograms";
 import StorePage from "./StorePage";
 import ProfilePage from "./ProfilePage";
@@ -115,12 +115,12 @@ const FEED: FeedItem[] = [
     publisher: { ...ASIAN_GAMES, live: true },
     video: FOOTBALL, start: 247, length: 30,
     title: "Japan vs Thailand",
-    summary: "Asian Games 2026 · Men's football, Group A. Japan lead 3–0 early in the second half — catch the rest live.",
+    summary: "Asian Games 2026 · Men's football, Group A. Japan leads 3–0 early in the second half — catch the rest live.",
     premium: true, ctaIcon: "play",
     type: "Live Sports", genre: "Asian Games 2026 · Football",
     badge: "LIVE",
     duration: "49’ · Japan 3–0 Thailand", rating: "G",
-    synopsis: "Japan meet Thailand in Group A of the men's football at the 20th Asian Games, Aichi-Nagoya 2026. Three goals in the first minutes of each half put Japan firmly in control.",
+    synopsis: "Japan meets Thailand in Group A of the men's football at the 20th Asian Games, Aichi-Nagoya 2026. Three goals in the first minutes of each half put Japan firmly in control.",
     cast: ["Japan U-23", "Thailand U-23", "AIS PLAY commentary"],
     img: frame("live-stream-assets/football-255.jpg"),
     cta: "Watch Live", live: true, accent: "#EA5454", watchProgress: 82,
@@ -180,7 +180,7 @@ const FEED: FeedItem[] = [
     type: "Sports Highlight", genre: "Asian Games 2026 · Volleyball",
     badge: null,
     duration: "Highlight · 14s", rating: "G",
-    synopsis: "Women's volleyball at the 20th Asian Games, Aichi-Nagoya 2026: Thailand take on China, and the Thai bench is on its feet after a long rally.",
+    synopsis: "Women's volleyball at the 20th Asian Games, Aichi-Nagoya 2026: Thailand takes on China, and the Thai bench is on its feet after a long rally.",
     cast: ["Thailand Women", "China Women"],
     img: frame("shorts-assets/volleyball.jpg"),
     cta: "Watch Highlight", live: false, accent: "#EA5454",
@@ -199,8 +199,8 @@ const FEED: FeedItem[] = [
     upcoming: true, premium: true, ctaIcon: "bell",
     type: "Live Sports", genre: "Asian Games 2026 · Badminton",
     badge: "New",
-    duration: "Sat 4 Oct · 18:00", rating: "G",
-    synopsis: "Thailand meet Singapore in the women's singles badminton at the 20th Asian Games, Aichi-Nagoya 2026. Live on Asian Games 2026, channel 909.",
+    duration: "Sat, Oct 4 · 18:00", rating: "G",
+    synopsis: "Thailand meets Singapore in the women's singles badminton at the 20th Asian Games, Aichi-Nagoya 2026. Live on Asian Games 2026, channel 909.",
     cast: ["Thailand", "Singapore", "AIS PLAY commentary"],
     img: frame("shorts-assets/badminton.jpg"),
     cta: "Remind Me", live: false, accent: "#EA5454",
@@ -256,7 +256,7 @@ const FEED: FeedItem[] = [
     // shown upright 9:16: cropped to fill the screen; zoom 1.1 cuts the ~24px black bars baked into the 1280x584 file
     video: DOOMSDAY, start: 0, length: 27, zoom: 1.1,
     title: "Avengers: Doomsday",
-    summary: "The official trailer. Marvel Studios' Avengers: Doomsday — only in cinemas, then streaming on Disney+.",
+    summary: "The official trailer. Marvel Studios' Avengers: Doomsday — only in theaters, then streaming on Disney+.",
     ageRating: "13+", quality: "4K", premium: true, ctaIcon: "play",
     type: "Movie", genre: "Marvel · Action · Sci-Fi",
     badge: "Trending",
@@ -321,16 +321,16 @@ export default function App() {
   const [pip, setPip] = useState<TVPos | null>(null);
   const [tvStart, setTvStart] = useState<TVPos | null>(null);
   const [tvShare, setTvShare] = useState<Channel | null>(null);
-  // the TV tab shows the player, or Browse Channels (with what was playing carried on in the PiP mini-player)
-  const [tvView, setTvView] = useState<"player" | "browse" | "programs">("player");
+  // the TV tab shows the player, or All Program Guide (with what was playing carried on in the PiP mini-player)
+  const [tvView, setTvView] = useState<"player" | "programs">("player");
 
   // ── Page history: every Back returns to the page you came from ──
-  // A page is a tab plus, on the TV tab, which view (player / Browse Channels / All Program Guide). Going anywhere
+  // A page is a tab plus, on the TV tab, which view (player / All Program Guide). Going anywhere
   // remembers where you were; Back steps back through that (and to Home once there's nothing left). Arriving at the
   // TV player picks up the channel given, or else what's playing in the PiP mini-player.
   // store: the Store page, open over the Home tab; account: the My Account page, open over the Profile tab;
   // pkgs: a package list (Sports / Movies / Shorts), open over the Store
-  type Page = { tab: "Clips" | "Home" | "TV" | "Profile"; tvView: "player" | "browse" | "programs"; store?: boolean; account?: boolean; pkgs?: PkgKind };
+  type Page = { tab: "Clips" | "Home" | "TV" | "Profile"; tvView: "player" | "programs"; store?: boolean; account?: boolean; pkgs?: PkgKind };
   const [store, setStore] = useState(false);
   const [account, setAccount] = useState(false);
   const [pkgs, setPkgs] = useState<PkgKind | undefined>();
@@ -568,7 +568,7 @@ export default function App() {
                           muted={muted}
                           topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
                           onSeekUi={o === 0 ? setSeekUi : undefined}
-                          onLike={() => { setLiked(s => toggleSet(s, f.id)); toast(liked.has(f.id) ? `Removed ${f.publisher.name} from favourites` : `Added ${f.publisher.name} to favourites`); }}
+                          onLike={() => { setLiked(s => toggleSet(s, f.id)); toast(liked.has(f.id) ? `Removed ${f.publisher.name} from favorites` : `Added ${f.publisher.name} to favorites`); }}
                           onSave={() => { setSaved(s => toggleSet(s, f.id)); toast(saved.has(f.id) ? "Removed from My List" : "Added to My List"); }}
                           onShare={() => setShareOpen(true)}
                           onProfile={() => toast(`${f.publisher.name} (demo)`)}
@@ -656,20 +656,10 @@ export default function App() {
                 muted={muted}
                 start={tvStart}
                 onShare={setTvShare}
-                onBrowse={pos => { setPip(pos); go({ tab: "TV", tvView: "browse" }); }}
                 onPrograms={pos => { setPip(pos); go({ tab: "TV", tvView: "programs" }); }}
                 onOpenStore={pos => { setPip(pos); go({ tab: "Home", tvView, store: true }); }}
                 onBack={pos => { setPip(pos); back(); }}
                 onToast={toast}
-              />
-            )}
-            {tab === "TV" && tvView === "browse" && (
-              <BrowseChannels
-                topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
-                bottom={feedBottom}
-                watching={pip?.cur}
-                onBack={back}
-                onPick={cur => playTV(pip && pip.cur === cur ? pip : { cur, t: 0 })}
               />
             )}
             {tab === "TV" && tvView === "programs" && (
@@ -825,6 +815,8 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SplashScreen muted={muted} />
     </>
   );
 
@@ -1260,7 +1252,7 @@ function FeedCard({
               <ProfileLogo publisher={item.publisher} />
             </button>
             {item.publisher.kind === "channel" ? (
-              <button onClick={e => { stop(e); onLike(); }} aria-label={liked ? "Remove from favourites" : "Add to favourites"}
+              <button onClick={e => { stop(e); onLike(); }} aria-label={liked ? "Remove from favorites" : "Add to favorites"}
                 className="w-10 h-10 rounded-full flex items-center justify-center">
                 <img src={liked ? iconHeartFilled : iconHeart} alt="" className="w-6 h-6 block flex-shrink-0" />
               </button>

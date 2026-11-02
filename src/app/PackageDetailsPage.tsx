@@ -84,7 +84,7 @@ type Plan = { kind: string; price: number; per: string };
 // "Month" / "Year" / "Day" for a plan, and the period it covers from today ("9 Sep 2026 - 8 Oct 2026")
 const unit = (plan: Plan) => plan.per === "Daily" ? "Day" : plan.per === "Yearly" ? "Year" : "Month";
 const periodOf = (plan: Plan) => {
-  const fmt = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const fmt = (d: Date) => d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
   const start = new Date(), end = new Date(start);
   if (plan.per === "Yearly") end.setFullYear(end.getFullYear() + 1);
   else if (plan.per === "Monthly") end.setMonth(end.getMonth() + 1);
@@ -95,12 +95,12 @@ const periodOf = (plan: Plan) => {
 const termsFor = (p: Pkg, plan: Plan) => [
   `${p.t} (${plan.per} plan) costs ${baht(plan.price)} baht per ${plan.per === "Daily" ? "day" : plan.per === "Yearly" ? "year" : "month"}, excluding 7% VAT (${baht(plan.price * (1 + VAT), 2)} baht including VAT). The charge is billed to your AIS account or the payment method you choose at checkout.`,
   plan.kind === "Recurring"
-    ? `The package renews automatically at the end of each ${plan.per === "Yearly" ? "year" : "month"} at the price then in effect until you cancel. You can cancel at any time from My Subscription; cancelling stops the next renewal and you keep access until the end of the period already paid for. Payments already made are not refunded, except where required by law.`
+    ? `The package renews automatically at the end of each ${plan.per === "Yearly" ? "year" : "month"} at the price then in effect until you cancel. You can cancel at any time from My Subscription; canceling stops the next renewal and you keep access until the end of the period already paid for. Payments already made are not refunded, except where required by law.`
     : `This is a one-time purchase that gives access for one day from the moment of purchase. It does not renew, and the charge is not refundable once the package is active.`,
   `The package can be watched on up to ${p.screens} screen${p.screens > 1 ? "s" : ""} at the same time, on phones, tablets, laptops and TVs signed in to the same AIS PLAY account. Picture quality (up to 4K and Dolby Atmos where offered) depends on your device, network and the content itself.`,
   `Channels, apps, leagues and titles included in the package may change because of rights agreements with content partners. AIS will tell you about significant changes in advance where possible. Live events can be moved, delayed or blacked out by the rights holders.`,
   `Partner apps included in the package (such as streaming services) may need their own account activation, and are also subject to that partner's terms of use and privacy policy.`,
-  `The package is for personal, non-commercial viewing in Thailand only. Recording, re-broadcasting, sharing your account outside your household or showing content in public venues is not allowed and may lead to the package being suspended without refund.`,
+  `The package is for personal, non-commercial viewing in Thailand only. Recording, rebroadcasting, sharing your account outside your household or showing content in public venues is not allowed and may lead to the package being suspended without refund.`,
   `AIS may update these terms. Continuing to use the package after an update means you accept the updated terms. For help, call 1175 (AIS) or 1530 (3BB), or visit the myAIS website.`,
 ];
 const num = (s: string) => Number(s.replace(/,/g, ""));
@@ -162,7 +162,7 @@ export default function PackageDetailsPage({ p, topInset, bottomInset = "0px", o
         <div className="flex flex-col gap-4 px-4 pb-4">
           {/* the package and its plans */}
           <section className="flex flex-col gap-2 p-2 rounded-[8px] overflow-hidden" style={CARD}>
-            {p.best && <span className="self-start flex items-center rounded-[14px] px-2" style={{ height: 24, fontSize: 14, fontWeight: 500, color: ON_SURFACE, background: "rgba(0,0,0,0.3)" }}>Recommend</span>}
+            {p.best && <span className="self-start flex items-center rounded-[14px] px-2" style={{ height: 24, fontSize: 14, fontWeight: 500, color: ON_SURFACE, background: "rgba(0,0,0,0.3)" }}>Recommended</span>}
             <div className="flex items-center gap-2">
               <img src={p.img} alt="" className="shrink-0 rounded-[8px]" style={{ width: 60, height: 60, background: "#000", objectFit: p.contain ? "contain" : "cover" }} />
               <span className="flex-1 truncate" style={{ fontSize: 18, lineHeight: "24px", color: "#fff" }}>{p.t}</span>
@@ -303,7 +303,7 @@ function Description({ p, label, small }: { p: Pkg; label: React.CSSProperties; 
   // sports packages lead with their leagues and channels, the others with what they're for (the card's note)
   const lead = p.league.length ? `${p.t} brings you ${p.league.join(", ")} live and on demand, with +${p.channels} premium channels on AIS PLAY.`
     : `${p.t}: ${p.note ?? "movies and series"} on AIS PLAY.`;
-  const text = `${lead}${apps} Watch in ${p.hd ? "HD" : "up to 4K with Dolby Atmos"} on your phone, tablet, laptop and TV, on up to ${p.screens} screen${p.screens > 1 ? "s" : ""} at once. Prices exclude 7% VAT; recurring plans renew automatically until cancelled from My Subscription.`;
+  const text = `${lead}${apps} Watch in ${p.hd ? "HD" : "up to 4K with Dolby Atmos"} on your phone, tablet, laptop and TV, on up to ${p.screens} screen${p.screens > 1 ? "s" : ""} at once. Prices exclude 7% VAT; recurring plans renew automatically until canceled from My Subscription.`;
   return (
     <section className="flex flex-col gap-2 p-3 rounded-[16px]" style={CARD}>
       <span style={label}>Description</span>
