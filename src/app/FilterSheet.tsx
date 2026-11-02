@@ -15,8 +15,8 @@ import { PANEL, ON_SURFACE, PILL, PILL_RING, CHIP_BG, CHIP_BORDER } from "./them
 // ─── Package filter sheet (Figma "Store" file: Filter For you 5258:66106, Shorts 5258:67131, Sports 5258:69112,
 // Movies 5258:69169) ──────────────────────────────────────────────────────────────────────────────────────────────
 // Opened from the filter button on a package list: a handle, back + "Filter" with close, then chip groups. Category
-// picks one; For You and Sports show Sub Category and League & Tournament, Movies and Shorts show Streaming Apps; then
-// Duration. The other groups are multi-pick with All (none picked = All). Show Package applies; Reset clears.
+// picks one; For You and Sports show Subcategory and League & Tournament, Movies and Shorts show Streaming Apps; then
+// Duration. The other groups are multi-pick with All (none picked = All). Show Packages applies; Reset clears.
 // Wireframe logo slots carry the app's league and app logos.
 
 export type Category = "For You" | "Sports" | "Movies" | "Shorts";
@@ -88,7 +88,7 @@ export default function FilterSheet({ value, reset = NO_FILTER, onApply, onClose
           </Group>
           {sporty ? (
             <>
-              <MultiGroup title="Sub Category" opts={SUBS} picked={f.sub} onToggle={toggle("sub")} all />
+              <MultiGroup title="Subcategory" opts={SUBS} picked={f.sub} onToggle={toggle("sub")} all />
               <MultiGroup title="League & Tournament" opts={LEAGUES} picked={f.league} onToggle={toggle("league")} all />
             </>
           ) : (
@@ -97,10 +97,10 @@ export default function FilterSheet({ value, reset = NO_FILTER, onApply, onClose
           <MultiGroup title="Duration" opts={DURATIONS} picked={f.duration} onToggle={toggle("duration")} all />
         </div>
 
-        {/* Show Package / Reset */}
+        {/* Show Packages / Reset */}
         <div className="shrink-0 flex flex-col gap-3 px-4 pt-2" style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }}>
           <button onClick={() => close(() => onApply(f))} className="w-full rounded-[10px] flex items-center justify-center" style={{ minHeight: 48, background: "#f0f0f0", boxShadow: "0 4px 4px rgba(0,0,0,0.2)" }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: "#282828" }}>Show Package</span>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#282828" }}>Show Packages</span>
           </button>
           <button onClick={() => setF(reset)} className="w-full rounded-[10px] flex items-center justify-center" style={{ minHeight: 48, border: "1px solid rgba(240,240,240,0.5)" }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>Reset</span>

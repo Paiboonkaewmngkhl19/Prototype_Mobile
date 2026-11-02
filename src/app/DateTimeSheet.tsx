@@ -16,11 +16,11 @@ const dayLabel = (d: number) => {
   if (d === 0) return "Today";
   if (d === 1) return "Tomorrow";
   const t = new Date(); t.setDate(t.getDate() + d);
-  return t.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  return t.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
 };
 export const guideLabel = (t: GuideTime) => {
   const d = new Date(); d.setDate(d.getDate() + t.day);
-  return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}, ${String(t.hour).padStart(2, "0")}:00`;
+  return `${d.toLocaleDateString("en-US", { day: "numeric", month: "short" })}, ${String(t.hour).padStart(2, "0")}:00`;
 };
 
 export default function DateTimeSheet({ value, onConfirm, onReset, onClose }: {

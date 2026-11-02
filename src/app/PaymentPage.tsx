@@ -23,7 +23,7 @@ export const AIS_ACCOUNT = "8801234456";
 const AIS_BILL: Method = { id: "ais", title: AIS_ACCOUNT, mark: { text: "AIS", bg: "#7ab800" } };
 const PROMPTPAY: Method = { id: "qr", title: "QR PromptPay", sub: "Scan a code with a banking app", mark: { text: "QR", bg: "#113566" } };
 const CARDS: Method[] = [
-  { id: "card1", title: "*****1234", sub: "Master Card", mark: { text: "MC", bg: "#eb001b" } },
+  { id: "card1", title: "*****1234", sub: "Mastercard", mark: { text: "MC", bg: "#eb001b" } },
   { id: "card2", title: "*****5678", sub: "Visa", mark: { text: "VISA", bg: "#1a1f71" } },
   { id: "card3", title: "*****9012", sub: "JCB", mark: { text: "JCB", bg: "#0b4ea2" } },
 ];
@@ -40,7 +40,7 @@ const BANKS: Method[] = [
   { id: "uob", title: "UOB TMRW", mark: { text: "UOB", bg: "#0b3b8c" } },
 ];
 
-// how a method reads on the receipt: "Charge to AIS Bill: 8801234456", "Master Card *****1234", "K PLUS"…
+// how a method reads on the receipt: "Charge to AIS Bill: 8801234456", "Mastercard *****1234", "K PLUS"…
 const label = (m: Method) => m.id === AIS_BILL.id ? `Charge to AIS Bill: ${m.title}` : m.id.startsWith("card") ? `${m.sub} ${m.title}` : m.title;
 
 export default function PaymentPage({ topInset, bottomInset = "0px", order, onPay, onBack }: {
@@ -135,7 +135,7 @@ export default function PaymentPage({ topInset, bottomInset = "0px", order, onPa
           // loading (Figma 4798:212350): a spinner, "payment is being processed." and Cancel Payment
           <div className="w-full flex flex-col items-center gap-4">
             <img src={icSpinner} alt="" width={32} height={32} className="animate-spin" style={{ animationDuration: "1.2s" }} />
-            <span className="text-center" style={{ fontSize: 18, lineHeight: "24px", color: ON_SURFACE }}>payment is being processed.</span>
+            <span className="text-center" style={{ fontSize: 18, lineHeight: "24px", color: ON_SURFACE }}>Your payment is being processed.</span>
             <button onClick={cancel} className="w-full rounded-[10px] flex items-center justify-center" style={{ minHeight: 48, border: "1px solid rgba(240,240,240,0.5)" }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: "#f0f0f0" }}>Cancel Payment</span>
             </button>
@@ -143,7 +143,7 @@ export default function PaymentPage({ topInset, bottomInset = "0px", order, onPa
         ) : (
           <>
             <span className="text-center" style={{ fontSize: 14, lineHeight: "20px", letterSpacing: 0.25, color: ON_VARIANT }}>
-              {order.recurring ? "You will be charged consecutively." : "You will be charged once."}
+              {order.recurring ? "You will be charged on a recurring basis." : "You will be charged once."}
             </span>
             <button onClick={pay} className="w-full rounded-[10px] flex items-center justify-center" style={{ minHeight: 48, background: "#f0f0f0", boxShadow: "0 4px 4px rgba(0,0,0,0.2)" }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: "#282828" }}>Process Payment</span>

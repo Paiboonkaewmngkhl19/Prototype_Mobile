@@ -31,7 +31,7 @@ const pkgs = (imgs: string[], price = "199 baht / Month", titles?: string[]): Pk
   imgs.map((img, k) => ({ img, price, t: titles?.[k] ?? "Package Title" }));
 
 const HERO = [
-  { img: imgHero, t: "PLAY Ultimate", price: 199, vat: "212.93", tags: ["Monthly", "Recurring", "Recommend"] },
+  { img: imgHero, t: "PLAY Ultimate", price: 199, vat: "212.93", tags: ["Monthly", "Recurring", "Recommended"] },
   { img: imgSportCard, t: "MONOMAX Sports", price: 299, vat: "319.93", tags: ["Monthly", "Recurring"] },
   { img: a("posters_portrait/House.jpg"), t: "HBO Max", price: 159, vat: "170.13", tags: ["Monthly", "New"] },
 ];
@@ -71,9 +71,9 @@ export const RAILS: { title: string; chips: Chip[]; cards: Pkg[] }[] = [
   },
 ];
 const PPV = [
-  { img: a("posters_portrait/ex3.jpg"), price: "199 baht", t: "Man City vs Arsenal", when: "23 Oct 2026 | 20:00 – 22:15" },
-  { img: a("posters_portrait/ex1.jpg"), price: "299 baht", t: "BOSSCK Dream Concert", when: "30 Oct 2026 | 19:00 – 22:00" },
-  { img: a("posters_portrait/ex2.jpg"), price: "149 baht", t: "The Sophomore D-Day", when: "1 Nov 2026 | 18:00 – 21:00" },
+  { img: a("posters_portrait/ex3.jpg"), price: "199 baht", t: "Man City vs Arsenal", when: "Oct 23, 2026 | 20:00 – 22:15" },
+  { img: a("posters_portrait/ex1.jpg"), price: "299 baht", t: "BOSSCK Dream Concert", when: "Oct 30, 2026 | 19:00 – 22:00" },
+  { img: a("posters_portrait/ex2.jpg"), price: "149 baht", t: "The Sophomore D-Day", when: "Nov 1, 2026 | 18:00 – 21:00" },
 ];
 const HIGHLIGHT = pkgs([a("posters_portrait/ex4.jpg"), a("posters_portrait/lotr/r5.jpg"), a("posters_portrait/Venom.jpg")], "99 baht / Month", ["Matchday Live", "Fantasy Pack", "Action Pack"]);
 const RENT = [a("posters_portrait/John.jpg"), a("posters_portrait/Venom.jpg"), a("posters_portrait/avatar.jpg"), a("posters_portrait/F1.jpg")];
@@ -81,12 +81,12 @@ const BUY = [a("posters_portrait/topgun_m.jpg"), a("posters_portrait/lotr/r1.jpg
 const ONE_TIME = pkgs([a("posters_portrait/ex5.jpg"), a("posters_portrait/debt.jpg"), a("posters_portrait/ex1.jpg")], "199 baht / 7 Days", ["Weekly Pass", "Series Binge", "Concert Week"]);
 const OTHERS = [{ img: imgSoundbar, t: "Smart Soundbar", pos: "12% center" }, { img: imgCloud, t: "AIS Cloud PC", pos: "25% center" }];
 const SUBS = [
-  { t: "Play Premium Plus", renews: "Renews 31 December", img: imgHero },
-  { t: "Play For you", renews: "Renews 29 October", img: imgSportCard },
+  { t: "Play Premium Plus", renews: "Renews December 31", img: imgHero },
+  { t: "Play For you", renews: "Renews October 29", img: imgSportCard },
 ];
 const FAQS = [
   { q: "How do I activate my package?", a: "After subscribing, your package is active right away on every device signed in to your AIS PLAY account. Open any channel or title in the package to start watching." },
-  { q: "Can I cancel anytime?", a: "Yes. Recurring packages can be cancelled from My Subscription; you keep access until the end of the current billing period." },
+  { q: "Can I cancel anytime?", a: "Yes. Recurring packages can be canceled from My Subscription; you keep access until the end of the current billing period." },
   { q: "Which devices can I watch on?", a: "AIS PLAY works on phones, tablets, smart TVs, the AIS PLAYBOX and the web, up to the number of screens your package allows." },
 ];
 
@@ -231,8 +231,8 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
             <div className="flex flex-col gap-2">
               <IconTitle icon={<Phone size={20} color={ON_SURFACE} />}><span style={{ fontSize: 18, color: ON_SURFACE }}>Customer service team</span></IconTitle>
               <ul className="m-0 pl-9 flex flex-col gap-2" style={{ fontSize: 14, lineHeight: "20px", color: ON_SURFACE }}>
-                <li>Dial 1175 to speak directly with AIS customer support team.</li>
-                <li>Dial 1530 to speak directly with 3BB customer support team.</li>
+                <li>Dial 1175 to speak directly with the AIS customer support team.</li>
+                <li>Dial 1530 to speak directly with the 3BB customer support team.</li>
               </ul>
             </div>
             <div className="flex flex-col gap-2">
@@ -356,7 +356,7 @@ function Faqs({ demo }: { demo: (label: string) => void }) {
       ))}
       <div className="flex flex-col items-center gap-2">
         <button onClick={() => demo("View all FAQs")} className="w-full rounded-full" style={{ minHeight: 48, background: "#f0f0f0", fontSize: 16, fontWeight: 700, color: "#282828" }}>View all FAQs</button>
-        <span style={{ fontSize: 14, fontWeight: 500, color: ON_VARIANT }}>View all FAQs on myAIS Application</span>
+        <span style={{ fontSize: 14, fontWeight: 500, color: ON_VARIANT }}>View all FAQs in the myAIS app</span>
       </div>
     </section>
   );

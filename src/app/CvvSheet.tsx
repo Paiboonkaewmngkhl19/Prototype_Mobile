@@ -71,7 +71,7 @@ export default function CvvSheet({ bottomInset = "0px", card, onPaid, onClose }:
 
             {/* CVV: three boxes, typed digits as *, the next one outlined */}
             <div className="w-full flex flex-col gap-2">
-              <span style={{ fontSize: 16, fontWeight: 500, lineHeight: "24px", letterSpacing: 0.15, color: "#fff" }}>Enter you CVV</span>
+              <span style={{ fontSize: 16, fontWeight: 500, lineHeight: "24px", letterSpacing: 0.15, color: "#fff" }}>Enter your CVV</span>
               <div className="flex justify-center gap-2" role="group" aria-label="CVV">
                 {Array.from({ length: LEN }, (_, k) => {
                   const focus = !busy && k === Math.min(cvv.length, LEN - 1);
