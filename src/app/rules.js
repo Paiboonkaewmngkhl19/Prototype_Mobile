@@ -20,7 +20,8 @@
     4. ไม่มี Login ด้วย QR และ Home Internet เพราะทั้งคู่ผูกกับเครื่อง TV / กล่อง PLAYBOX
 */
 (function(root, factory){
-  if(typeof module === 'object' && module.exports) module.exports = factory();
+  if(root && root.document) root.MobileRules = factory();   // a browser, checked first: bundlers can rename `module`
+  else if(typeof module === 'object' && module.exports) module.exports = factory();
   else root.MobileRules = factory();
 })(typeof self !== 'undefined' ? self : this, function(){
   'use strict';
