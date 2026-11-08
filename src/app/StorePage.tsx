@@ -14,7 +14,8 @@ import { PAGE_BG, BG, ON_SURFACE, ON_VARIANT, CHIP_BG, CHIP_BORDER, PILL, PILL_R
 import { CATALOG as C, SHORT_DRAMAS, RENT_LIST } from "./catalog";
 import { OTT, PKG, type StorePkg } from "./storeData";
 import { rules } from "./mobileRules";
-import { OttTag } from "./cardTags";
+import { CrownFrame, CROWN_IN_FRAME, OttTag } from "./cardTags";
+import iconCrown from "../assets/home/crown.svg";
 
 // ─── Store (Figma "Store" file, Mobile / Content modal 5222:66002) ────────────────────────────────────────────────
 // Opened from the Store rail on For you and Sports: a package hero (title, badges, Subscribe, VAT), package rails with
@@ -108,7 +109,7 @@ const HIGHLIGHT: Pkg[] = ([["play-inter", "PLAY INTER", 199], ["play-disney", "P
 // Rentals and Buy: the titles sold on their own, by whether they can be rented or bought
 const SOLD = [...RENT_LIST.map(r => r.k), "superman", "debt", "medium", "khemjira"];
 const titleSquare = (k: string) => ({ k, plat: C[k].plat, img: a(C[k].p ?? C[k].w ?? ""), t: C[k].t, pos: k === "superman" ? "87% center" : undefined });
-const RENT = SOLD.filter(k => (C[k].rent ?? 0) > 0).map(titleSquare);
+const RENT = SOLD.filter(k => (C[k].rent ?? 0) > 0 && k !== "avatar").map(titleSquare);
 const BUY = SOLD.filter(k => (C[k].buy ?? 0) > 0).map(titleSquare);
 // One Time: every 7-day pass, charged once, Netflix's first
 const ONE_TIME: Pkg[] = [cardOf(PKG.netflix[0]), ...pick(p => p.card === "7 Days" && p !== PKG.netflix[0])];
@@ -175,7 +176,7 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
             <div className="flex items-center gap-[6px] p-1">
               {HERO.map((_, k) => (
                 <button key={k} onClick={() => setSlide(k)} aria-label={`Package ${k + 1}`} className="rounded-full transition-all duration-300"
-                  style={{ height: 8, width: k === slide ? 24 : 8, background: k === slide ? ON_SURFACE : "rgba(255,255,255,0.35)" }} />
+                  style={{ height: 8, width: k === slide ? 24 : 8, background: k === slide ? "#fff" : "rgba(255,255,255,0.35)" }} />
               ))}
             </div>
           </div>
@@ -195,7 +196,7 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
                   <span style={{ fontSize: 18, fontWeight: 500, color: ON_SURFACE }}>{price} baht</span>
                   <span className="truncate w-full" style={{ fontSize: 13, fontWeight: 600, color: ON_SURFACE }}>{m.t}</span>
                   <span className="flex items-center gap-2 mt-1">
-                    {rules().showsCrown({ k: p.k }) && <span className="rounded-full px-2" style={{ fontSize: 12, fontWeight: 600, color: TAG_TEXT, background: TAG_BG }}>Premium</span>}
+                    {rules().showsCrown({ k: p.k }) && <CrownFrame><img src={iconCrown} alt="Premium" width={CROWN_IN_FRAME} height={CROWN_IN_FRAME} /></CrownFrame>}
                     {m.plat && <OttTag inline plat={m.plat} />}
                   </span>
                 </span>
@@ -218,9 +219,9 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
           {/* Others: devices and services, price only */}
           <Rail title="Others">
             {OTHERS.map(o => (
-              <button key={o.t} onClick={() => demo(o.t)} className="shrink-0 flex flex-col gap-2 overflow-hidden rounded-[8px] text-left" style={{ width: 200, height: 228, background: CARD }}>
-                <img src={o.img} alt={o.t} className="w-full object-cover rounded-[11px]" style={{ height: 198 }} />
-                <span className="px-1 truncate" style={{ fontSize: 18, fontWeight: 500, color: ON_SURFACE }}>{o.price}</span>
+              <button key={o.t} onClick={() => demo(o.t)} className="shrink-0 flex flex-col overflow-hidden rounded-[8px] text-left" style={{ width: 200, height: 236, background: CARD }}>
+                <img src={o.img} alt={o.t} className="w-full shrink-0 object-cover rounded-[11px]" style={{ height: 198 }} />
+                <span className="p-2 truncate" style={{ fontSize: 18, fontWeight: 500, lineHeight: "22px", color: ON_SURFACE }}>{o.price}</span>
               </button>
             ))}
           </Rail>
@@ -230,27 +231,7 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
           {/* My Subscription */}
           <section className="flex flex-col gap-4">
             <RailHeader title="My Subscription" more onMore={() => demo("My Subscription")} />
-            <div className="flex flex-col gap-4 px-4">
-              {SUBS.map(s => (
-                <div key={s.t} className="flex flex-col gap-1 overflow-hidden rounded-[12px] pb-1" style={{ background: "rgba(255,255,255,0.12)" }}>
-                  <div className="flex flex-col gap-3 p-3 rounded-b-[8px]" style={{ background: PANEL }}>
-                    <div className="flex items-start gap-2">
-                      <img src={s.img} alt="" className="rounded-[8px] object-cover shrink-0" style={{ width: 48, height: 48 }} />
-                      <span className="flex-1 truncate" style={{ fontSize: 16, fontWeight: 500, lineHeight: "24px", color: ON_SURFACE }}>{s.t}</span>
-                      <span className="flex items-center rounded-[4px] px-2" style={{ height: 20, fontSize: 10, fontWeight: 500, color: "#101010", background: "#9edb07" }}>Active</span>
-                    </div>
-                    <div className="flex flex-col gap-2 rounded-[8px] p-2" style={{ background: "rgba(0,0,0,0.25)" }}>
-                      <div className="flex flex-wrap gap-[8px_6px]">
-                        {[logoNetflix, logoHbo, logoHotstar, logoViu, logoIqiyi].map(l => <img key={l} src={l} alt="" className="rounded-[4px] object-cover" style={{ width: 32, height: 32 }} />)}
-                        <span className="flex items-center justify-center rounded-[4px]" style={{ width: 32, height: 32, fontSize: 11, fontWeight: 500, color: "#000", background: "#c9c9c9" }}>+2</span>
-                      </div>
-                      <span style={{ fontSize: 14, lineHeight: "20px", color: ON_SURFACE }}>+99 Premium Channels</span>
-                    </div>
-                  </div>
-                  <span className="text-center" style={{ fontSize: 12, lineHeight: "16px", color: ON_SURFACE }}>{s.renews}</span>
-                </div>
-              ))}
-            </div>
+            <SubscriptionCards />
           </section>
 
           <Faqs demo={demo} />
@@ -273,6 +254,35 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
         </div>
       </div>
       <style>{`.store-scroll,.store-rail{scrollbar-width:none}.store-scroll::-webkit-scrollbar,.store-rail::-webkit-scrollbar{display:none}`}</style>
+    </div>
+  );
+}
+
+// the subscriber's packages, in a side-scrolling row, the same on this page and on Profile. rail: the page's class that
+// hides the scrollbar
+export function SubscriptionCards({ rail = "store-rail" }: { rail?: string }) {
+  return (
+    <div className={`${rail} flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-4`}>
+      {SUBS.map(s => (
+        <div key={s.t} className="shrink-0 flex flex-col gap-1 overflow-hidden rounded-[12px] pb-1" style={{ width: 289, background: "rgba(255,255,255,0.12)" }}>
+          <div className="flex flex-col gap-3 p-3 rounded-b-[8px]" style={{ background: PANEL }}>
+            <div className="flex items-start gap-2">
+              <img src={s.img} alt="" className="rounded-[8px] object-cover shrink-0" style={{ width: 48, height: 48 }} />
+              <span className="flex-1 truncate" style={{ fontSize: 16, fontWeight: 500, lineHeight: "24px", color: ON_SURFACE }}>{s.t}</span>
+              <span className="flex items-center rounded-[4px] px-2" style={{ height: 20, fontSize: 10, fontWeight: 500, color: "#101010", background: "#9edb07" }}>Active</span>
+            </div>
+            <div className="flex flex-col gap-2 rounded-[8px] p-2" style={{ background: "rgba(0,0,0,0.25)" }}>
+              <div className="flex flex-wrap gap-[8px_6px]">
+                {[logoNetflix, logoHbo, logoHotstar, logoViu, logoIqiyi].map(l => <img key={l} src={l} alt="" className="rounded-[4px] object-cover" style={{ width: 32, height: 32 }} />)}
+                <span className="flex items-center justify-center rounded-[4px]" style={{ width: 32, height: 32, fontSize: 11, fontWeight: 500, color: "#000", background: "#c9c9c9" }}>+2</span>
+              </div>
+              <span style={{ fontSize: 14, lineHeight: "20px", color: ON_SURFACE }}>+99 Premium Channels</span>
+            </div>
+          </div>
+          <span className="text-center" style={{ fontSize: 12, lineHeight: "16px", color: ON_SURFACE }}>{s.renews}</span>
+        </div>
+      ))}
+      <Pad />
     </div>
   );
 }
@@ -314,17 +324,20 @@ function BrandArt({ k }: { k: string }) {
     ? <span className="relative block overflow-hidden rounded-full bg-white" style={{ width: 96, height: 96 }}>
         <img src={a(b.logo)} alt={b.n} className={b.box ? "absolute max-w-none" : "w-full h-full"} style={b.box ? { left: `${b.box[0]}%`, top: `${b.box[1]}%`, width: `${b.box[2]}%`, height: `${b.box[3]}%`, objectFit: "contain" } : { objectFit: b.fit, padding: b.fit === "contain" ? 10 : 0 }} />
       </span>
-    : <img src={a(b.logo)} alt={b.n} className={b.kind === "wide" ? "object-contain" : "object-cover rounded-[16px]"} style={b.kind === "wide" ? { width: 124, height: 72 } : { width: 84, height: 84 }} />;
+    : <img src={a(b.logo)} alt={b.n} className={b.kind === "wide" ? "object-contain" : "brand-logo object-cover rounded-[16px]"}
+        style={b.kind === "wide" ? { width: 124, height: 72 } : { width: 124, height: "auto" }} />;   // otherwise a logo on its own plate or app icon, shown whole
   return <span className="flex items-center justify-center w-full rounded-[11px] shrink-0" style={{ height: 198, background: b.bg }}>{logo}</span>;
 }
 
 function PackageCard({ p, onTap }: { p: Pkg; onTap: () => void }) {
   return (
-    <button onClick={onTap} className="relative shrink-0 flex flex-col gap-2 overflow-hidden rounded-[8px] text-left" style={{ width: 200, height: 253, background: CARD }}>
+    <button onClick={onTap} className="relative shrink-0 flex flex-col overflow-hidden rounded-[8px] text-left" style={{ width: 200, height: 257, background: CARD }}>
       {p.ott ? <BrandArt k={p.ott} /> : <span className="relative block w-full shrink-0" style={{ height: 198 }}><img src={p.img} alt="" className="w-full h-full object-cover rounded-[11px]" />{p.plat && <OttTag plat={p.plat} />}</span>}
       <CardBadge label={p.badge} />
-      <span className="px-1 truncate" style={{ fontSize: 18, fontWeight: 500, lineHeight: "22px", color: ON_SURFACE }}>{p.price}</span>
-      <span className="px-1 truncate" style={{ fontSize: 14.5, lineHeight: "17px", color: ON_VARIANT, marginTop: -4 }}>{p.t}</span>
+      <span className="flex flex-col gap-1 p-2 min-w-0">
+        <span className="truncate" style={{ fontSize: 18, fontWeight: 500, lineHeight: "22px", color: ON_SURFACE }}>{p.price}</span>
+        <span className="truncate" style={{ fontSize: 14.5, lineHeight: "17px", color: ON_VARIANT }}>{p.t}</span>
+      </span>
     </button>
   );
 }
@@ -374,12 +387,14 @@ function CategoryRail({ rail, demo, onMore }: { rail: (typeof RAILS)[number]; de
 
 // a category chip: a 32px round logo (or short text) + name; the picked one in the light glass
 export function CategoryChip({ c, sel, withImg = true, onTap }: { c: Chip; sel: boolean; withImg?: boolean; onTap: () => void }) {
+  // a chip with nothing to show in the circle (Popular) has no circle
+  const circle = withImg && !!(c.logo || c.text);
   return (
     <button onClick={onTap} className="shrink-0 flex items-center gap-[6px] rounded-[8px]"
-      style={{ height: 44, padding: withImg ? "4px 12px 4px 4px" : "4px 16px", background: sel ? PILL : CHIP_BG,
+      style={{ height: 44, padding: circle ? "4px 12px 4px 4px" : "4px 16px", background: sel ? PILL : CHIP_BG,
         boxShadow: sel ? PILL_RING : "none", border: sel ? "none" : `1px solid ${CHIP_BORDER}`,
         backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
-      {withImg && (
+      {circle && (
         <span className="rounded-full overflow-hidden flex items-center justify-center shrink-0" style={{ width: 32, height: 32, background: c.logo ? "#fff" : "#282828" }}>
           {c.logo ? <img src={c.logo} alt="" className={`w-full h-full ${c.contain ? "object-contain p-1" : "object-cover"}`} /> : c.text && <span style={{ fontSize: 10, fontWeight: 800, color: "#fff" }}>{c.text}</span>}
         </span>

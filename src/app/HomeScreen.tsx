@@ -39,7 +39,7 @@ import { CHANNELS as TV_CHANNELS, Crown as TVCrown, ChannelLogo, clock, nowMinut
 import { CATALOG as C, RAILS as R, CONTINUE_LIST, FOR_YOU_LIST, RENT_LIST, MY_RENTAL_LIST, LEAVING_LIST, SPORT_LIVE_LIST, SHORT_DRAMAS } from "./catalog";
 import { TAG_BG, TAG_TEXT, BAND_FADE, PAGE_BG, ON_SURFACE, ON_VARIANT, LIVE, PROGRESS, PROGRESS_TRACK, PILL, PILL_RING, CHIP_BG, CHIP_BORDER, GLASS_CARD, PANEL_SOLID } from "./theme";
 import { rules } from "./mobileRules";
-import { CrownFrame, CROWN_IN_FRAME, OttTag, ottSrc } from "./cardTags";
+import { CrownFrame, CROWN_IN_FRAME, OTT_TAG, OttTag, ottSrc } from "./cardTags";
 
 // ─── Home tab (Figma "AIS PLAY / Home / Full Page", node 695:69713) ─────────────────────────────────────────────
 // The phone Home screen behind the bottom navigation's Home tab: a full-bleed hero carousel under the header and
@@ -79,12 +79,20 @@ const UPCOMING = [
 ];
 
 
-const EXCLUSIVE: { img: string; pos?: string; live?: boolean; title?: string; price?: string; vat?: string; plat?: string }[] = [
-  { img: wide("assanee"), title: C.assanee.t, price: "199 baht", vat: "(VAT Included: 212.93 baht)", plat: C.assanee.plat },
-  { img: poster("missuni"), pos: "90% center", plat: C.missuni.plat },
-  { img: poster("sophomores"), plat: C.sophomores.plat },
-  { img: poster("bossckm"), plat: C.bossckm.plat },
-  { img: a("posters_portrait/ex3.jpg"), live: true },
+// the details inside an AIS PLAY Exclusive card: name, price with VAT (7%) and tags. k: its catalog key, for the crown
+type ExclusiveDetail = { title: string; price: string; vat: string; plat: string; k?: string };
+const exclusiveDetail = (title: string, baht: number, plat: string, k?: string): ExclusiveDetail =>
+  ({ title, price: `${baht} baht`, vat: `(VAT Included: ${(baht * 1.07).toFixed(2)} baht)`, plat, k });
+const titleDetail = (k: string) => exclusiveDetail(C[k].t, C[k].buy!, C[k].plat!, k);
+// this match isn't a catalog title
+const MATCH_DETAIL = exclusiveDetail("Man City vs Arsenal", 199, "monomax");
+
+const EXCLUSIVE: (ExclusiveDetail & { img: string; pos?: string; live?: boolean })[] = [
+  { img: wide("assanee"), ...titleDetail("assanee") },
+  { img: poster("missuni"), pos: "90% center", ...titleDetail("missuni") },
+  { img: poster("sophomores"), ...titleDetail("sophomores") },
+  { img: poster("bossckm"), ...titleDetail("bossckm") },
+  { img: a("posters_portrait/ex3.jpg"), live: true, ...MATCH_DETAIL },
 ];
 
 // ── Home rails added in the Figma redesign (Home file, PLAY:Home_fullPageAfterWatched 1063:111194) ──
@@ -98,7 +106,11 @@ const posterRail = (list: RailEntry[], tags: Record<number, string> = {}): Poste
   return { k, img: poster(k), t: C[k].t, tag: (typeof x === "object" ? x.badge : undefined) ?? tags[i], plat: C[k].plat };
 });
 const NEW_RELEASE = posterRail(R.hot, { 1: "New" });
-const NINETIES = posterRail(["spacejam", "sunrise", "fourweddings"], { 1: "Leaving Soon" });
+const NINETIES: Poster[] = [
+  ...posterRail(["spacejam", "sunrise", "fourweddings"], { 1: "Leaving Soon" }),
+  ...[["10things", "10 Things I Hate About You"], ["howtolose", "How to Lose a Guy in 10 Days"], ["nottinghill", "Notting Hill"], ["pride", "Pride & Prejudice"], ["holiday", "The Holiday"], ["princess", "The Princess Diaries"], ["joeblack", "Meet Joe Black"]]
+    .map(([f, t]) => ({ img: a(`posters_portrait/nineties/${f}.jpg`), t, plat: "ais" })),
+];
 const LOVE = posterRail(R.love, { 1: "Leaving Soon" });
 const DATE_NIGHT = posterRail(R.dateNight, { 1: "New" });
 // the rail is the TV prototype's, without the title it is named after
@@ -125,10 +137,12 @@ const CHOOSE: { t: string; img: string; dim: number; fontSize: number; crop: Rea
   { t: "Sport", img: imgChooseSport, dim: 0.2, fontSize: 14, crop: { width: "149.9%", height: "100%", left: "-39.6%", top: "-0.32%" } },
   { t: "Live TV", img: imgChooseLiveTv, dim: 0.5, fontSize: 14, crop: { width: "100%", height: "100%", left: 0, top: 0, objectFit: "cover" } },
 ];
-// Top 10 numerals: Figma's artwork for 1 to 3 (w: the numeral's width; at: where the poster starts; slot: the item's
-// width in the rail). Figma stops at 3, so 4 to 10 are drawn as text in the same size and gradient.
+// Top 10 numerals: Figma's artwork for 1 to 3 (w: the numeral's width). Figma stops at 3, so 4 to 10 are drawn as text in
+// the same size and gradient (TOP_INK: where each one's visible shape starts and ends). Every numeral starts at the left
+// of its item and tucks the same distance behind its poster.
 const TOP_ART = [{ img: imgTop1, w: 40 }, { img: imgTop2, w: 68 }, { img: imgTop3, w: 71 }];
-const HOME_TOP_AT = [{ at: 28.85, slot: 163.85 }, { at: 25.15, slot: 152 }, { at: 59.85, slot: 194.85 }];
+const TOP_INK: Record<number, [number, number]> = { 4: [2.4, 77.7], 5: [6.8, 73.6], 6: [4.9, 75.5], 7: [3.8, 75.5], 8: [4.9, 75.1], 9: [4.5, 75.1], 10: [8.3, 145] };
+const TOP_TUCK = 11;
 // Hot Channel Programs: what's on now on the TV channels that have their own picture
 const channelIndex = (name: string) => TV_CHANNELS.findIndex(c => c.name === name);
 const HOT_PROGRAM = [["CNN", "CNN News", "dm-cnn.png"], ["3 HD", "Morning Stories", "dm-rueng.png"], ["BBC News", "BBC News", "dm-bbc.png"], ["CH7 HD", "Channel 7 News Insight", "dm-sanam7.png"], ["TPBS", "World Update with Thai PBS", "lc-1.png"], ["PPTV HD", "Open News Desk", "lc-2.png"], ["Nation TV", "Komchadluek", "lc-4.png"]]
@@ -207,7 +221,6 @@ const MOVIE_POOL = [...new Set([...R.hot, ...R.top10, ...R.because, ...R.love, .
 const isSeries = (k: string) => /Season/.test(C[k].len ?? "");
 const MOVIE_FILMS = MOVIE_POOL.filter(k => !isSeries(k)).slice(0, 8);
 const MOVIE_SERIES = MOVIE_POOL.filter(isSeries).slice(0, 8);
-const MOVIE_TOP_AT = [{ at: 28.85, slot: 163.85 }, { at: 38, slot: 173 }, { at: 59.85, slot: 194.85 }];
 
 // the TV tab's sports channels (TV Guide, Hot Channel and Sports Channels rails)
 const SPORT_TV = ["PLAY SPORTS (Football)", "MUTV", "Real Madrid TV", "W-Sports", "Asian Games 902", "Asian Games 907", "PLAY SPORTS (NBA)", "PLAY SPORTS (NFL)"].map(n => ({ i: TV_CHANNELS.findIndex(c => c.name === n), c: TV_CHANNELS.find(c => c.name === n)! }));
@@ -220,7 +233,7 @@ const sportTitles = (keys: string[]): SportPoster[] => keys.map(k => ({ k, img: 
 const SPORT_TOP10 = sportTitles(["f1", "mourinho", "rocky", "beckham", "creed", "pele", "spacejam", "blindside", "ronaldinho", "goal"]);
 const BIG_SCREEN = sportTitles(["f1", "creed", "spacejam2", "longestyard", "goal2"]);
 const SPORT_FOR_YOU = sportTitles(["beckham", "ronaldinho", "rocky", "secretariat"]);
-const SPORT_EXCLUSIVE: SportPoster[] = [{ img: a("posters_portrait/ex3.jpg"), t: "Man City vs Arsenal" }, ...sportTitles(["mufcche", "mufcars"])];
+const SPORT_EXCLUSIVE: (ExclusiveDetail & { img: string })[] = [{ img: a("posters_portrait/ex3.jpg"), ...MATCH_DETAIL }, ...["mufcche", "mufcars"].map(k => ({ img: poster(k), ...titleDetail(k) }))];
 const UNDERDOGS = sportTitles(["rocky", "creed", "blindside", "longestyard", "goal", "goal2", "secretariat"]);
 const SPORT_BECAUSE = sportTitles(["creed", "longestyard", "blindside", "spacejam", "goal", "secretariat", "f1"]);
 const JUMP_BACK = [
@@ -240,19 +253,15 @@ const liveChannel = (t: string) => {
 const LEAGUE_NAME: Record<string, string> = { ucl: "UEFA Champions League", nba: "NBA", nfl: "NFL", bundesliga: "Bundesliga", "": "Club Friendly" };
 const SPORT_LIVE = SPORT_LIVE_LIST.map((m, i) => ({ t: m.t, sub: LEAGUE_NAME[m.lg] ?? "", img: stills("liveUpcoming", Number(m.n)), live: m.live, badge: m.when ?? undefined, premium: i === 1 }));
 // where each Top 10 poster starts and how much of the rail it takes
-const SPORT_TOP_AT = [{ at: 28.85, slot: 148.85 }, { at: 37.39, slot: 152 }, { at: 59.85, slot: 179.85 }];
 
-export interface ShortThumb { img: string; title: string }
 
 const slidesFor = (tab: string) => tab === "Sports" ? SPORT_SLIDES : tab === "Movie" ? MOVIE_SLIDES : SLIDES;
 
 export default function HomeScreen({
-  topInset, bottom, shorts, onOpenShort, onOpenChannel, onOpenStore, onToast,
+  topInset, bottom, onOpenChannel, onOpenStore, onToast,
 }: {
   topInset: string;                      // status bar / safe-area height
   bottom: string;                        // space taken by the bottom navigation
-  shorts: ShortThumb[];
-  onOpenShort: (index: number) => void;
   onOpenChannel: (index: number) => void;    // plays that TV channel on the TV tab
   onOpenStore: () => void;                   // the Store page
   onToast: (msg: string) => void;
@@ -479,7 +488,7 @@ export default function HomeScreen({
                   <button onClick={() => demo("More")} aria-label="More" className="p-[6px] rounded-full flex items-center justify-center shrink-0" style={{ border: `1px solid ${CHIP_BORDER}` }}><img src={iconMovieMore} alt="" /></button>
                 </div>
                 <div className="flex items-center gap-2 overflow-hidden" style={{ height: 32, fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.1, color: ON_SURFACE }}>
-                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain shrink-0" style={{ width: 30, height: 20, borderRadius: 9999 }} />
+                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain shrink-0" style={{ ...OTT_TAG, borderRadius: 9999 }} />
                   <span className="shrink-0">{s.genre}</span><span className="shrink-0">{s.year}</span><span className="shrink-0">{s.dur}</span>
                   <span className="flex items-center gap-1 shrink-0">
                     {[s.rate, s.q].map(x => <span key={x} className="rounded-[14px] px-2 py-1" style={{ border: `1px solid ${CHIP_BORDER}`, lineHeight: "normal", letterSpacing: 0 }}>{x}</span>)}
@@ -495,22 +504,22 @@ export default function HomeScreen({
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain" style={{ width: 30, height: 20, borderRadius: 9999 }} />
-                  {s.live && <LivePill size={1.5} />}
-                  {s.time && <span className="flex items-center rounded-full px-3" style={{ height: 26, fontSize: 12, color: ON_SURFACE, border: "1px solid rgba(255,255,255,0.5)" }}>{s.time}</span>}
+                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain" style={{ ...OTT_TAG, borderRadius: 9999 }} />
+                  {s.live && <HeroLive />}
+                  {s.time && <HeroTime label={s.time} />}
                 </div>
               </div>
             ) : (
             <div className="flex flex-col items-center gap-2 w-full">
                 <h2 ref={titleRef} className="text-white text-center m-0" style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.2, letterSpacing: -0.2, textShadow: "0 2px 10px rgba(0,0,0,.5)" }}>{s.title}</h2>
                 <div className="flex items-center gap-3">
-                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain" style={{ width: 30, height: 20, borderRadius: 9999 }} />
-                  <span style={{ fontSize: 11, color: ON_SURFACE }}>{s.channel}</span>
+                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain" style={{ ...OTT_TAG, borderRadius: 9999 }} />
+                  <span style={{ fontSize: 14, color: ON_SURFACE }}>{s.channel}</span>
                 </div>
                 {(s.live || s.time) && (
                   <div className="flex items-center gap-[9px]">
-                    {s.live && <StatusPill label="LIVE" live />}
-                    {s.time && <span className="flex items-center rounded-[10px] px-[7px]" style={{ height: 20, fontSize: 11, fontWeight: 500, color: ON_SURFACE, border: `0.55px solid ${CHIP_BORDER}` }}>{s.time}</span>}
+                    {s.live && <HeroLive />}
+                    {s.time && <HeroTime label={s.time} />}
                   </div>
                 )}
               </div>
@@ -524,20 +533,18 @@ export default function HomeScreen({
                 {myList.has(s.title) ? <Check size={sport ? 22 : 24} className="text-white" /> : <Plus size={sport ? 22 : 24} className="text-white" />}
               </button>}
             </div>
-            {/* the active dot is a 24px track with its 8px indicator at the left */}
+            {/* the active dot: a solid white 24px bar */}
             <div className="flex items-center gap-[6px] p-1">
               {slides.map((_, i) => (
                 <button key={i} aria-label={`Slide ${i + 1}`} onClick={() => { setSlide(i); setTick(t => t + 1); }}
                   className="relative rounded-full transition-all duration-300"
-                  style={{ height: 8, width: i === slide ? 24 : 8, background: "rgba(255,255,255,0.35)" }}>
-                  {i === slide && <span className="absolute left-0 top-0 rounded-full" style={{ width: 8, height: 8, background: ON_SURFACE }} />}
-                </button>
+                  style={{ height: 8, width: i === slide ? 24 : 8, background: i === slide ? "#fff" : "rgba(255,255,255,0.35)" }} />
               ))}
             </div>
           </div>
         </div>
 
-        {sport ? <SportRails demo={demo} chip={chip} onChip={onChip} chipsRef={chipsRef} chipsDocked={chipsDocked} shorts={shorts} onOpenShort={onOpenShort} onOpenChannel={onOpenChannel} onOpenStore={onOpenStore} /> : movie ? <MovieRails demo={demo} chip={chip} onChip={onChip} chipsRef={chipsRef} chipsDocked={chipsDocked} onOpenChannel={onOpenChannel} /> : (
+        {sport ? <SportRails demo={demo} chip={chip} onChip={onChip} chipsRef={chipsRef} chipsDocked={chipsDocked} onOpenChannel={onOpenChannel} onOpenStore={onOpenStore} /> : movie ? <MovieRails demo={demo} chip={chip} onChip={onChip} chipsRef={chipsRef} chipsDocked={chipsDocked} onOpenChannel={onOpenChannel} /> : (
         <div className="flex flex-col gap-6 pt-6">
           {/* Continue Watching */}
           <Rail title="Continue Watching" gap={16}>
@@ -557,7 +564,7 @@ export default function HomeScreen({
           </Rail>
 
           {/* Top 10: 135 x 202 posters overlapping their numerals, which sit centered on the poster's height */}
-          <TopTenRail items={R.top10.map(x => ({ img: poster(x.k), t: C[x.k].t, k: x.k }))} width={135} height={202} gap={8} positions={HOME_TOP_AT} onTap={i => demo(`#${i + 1} in Top 10`)} />
+          <TopTenRail items={R.top10.map(x => ({ img: poster(x.k), t: C[x.k].t, k: x.k }))} width={135} height={202} gap={8} onTap={i => demo(`#${i + 1} in Top 10`)} />
 
           {/* Live and Upcoming */}
           <Rail title="Live and Upcoming" gap={16}>
@@ -606,14 +613,13 @@ export default function HomeScreen({
             ))}
           </Rail>
 
-          {/* AIS PLAY Exclusive: 250 x 375 posters; a pay-per-view title carries its name, price and badges */}
+          {/* AIS PLAY Exclusive: 250 x 375 posters, each with its name, price and badges */}
           <Rail title="AIS PLAY Exclusive" gap={16} smallTitle>
             {EXCLUSIVE.map(e => (
               <button key={e.img} onClick={() => demo("AIS PLAY Exclusive")} className="relative shrink-0 overflow-hidden rounded-[20px] text-left" style={{ width: 250, height: 375 }}>
                 <img src={e.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: e.pos ?? "center" }} />
                 {e.live && <span className="absolute left-2 top-2"><StatusPill label="LIVE" live /></span>}
-                {!e.title && e.plat && <OttTag plat={e.plat} />}
-                {e.title && <PriceOverlay title={e.title} price={e.price ?? ""} vat={e.vat ?? ""} plat={e.plat ?? "monomax"} premium={rules().showsCrown({ k: "assanee" })} />}
+                <PriceOverlay title={e.title} price={e.price} vat={e.vat} plat={e.plat} premium={!e.k || rules().showsCrown({ k: e.k })} />
               </button>
             ))}
           </Rail>
@@ -672,7 +678,7 @@ export default function HomeScreen({
           <Rail title="Because you watched The Hobbit" gap={16}>{BECAUSE.map((p, k) => <PosterCard key={k} p={p} onTap={() => demo(p.t)} />)}</Rail>
 
           {/* Seasonal / collection: big posters with their name over the bottom */}
-          <Rail title="" gap={16}>
+          <Rail title="Season/Collection" gap={16}>
             {SEASONAL.map(c => (
               <button key={c.t} onClick={() => demo(c.t)} className="relative shrink-0 overflow-hidden rounded-[20px] text-left" style={{ width: 250, height: 375 }}>
                 <img src={c.img} alt="" className="w-full h-full object-cover" />
@@ -751,10 +757,10 @@ export function FilterChips({ items, chip, onPick }: { items: string[]; chip: st
   );
 }
 
-function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenShort, onOpenChannel, onOpenStore }: {
+function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel, onOpenStore }: {
   demo: (label: string) => void; chip: string; onChip: (c: string) => void;
   chipsRef: React.RefObject<HTMLDivElement>; chipsDocked: boolean;
-  shorts: ShortThumb[]; onOpenShort: (i: number) => void; onOpenChannel: (i: number) => void; onOpenStore: () => void;
+  onOpenChannel: (i: number) => void; onOpenStore: () => void;
 }) {
   const [favs, setFavs] = useState(() => new Set(LEAGUES.filter(l => l.fav).map(l => l.t)));
   const now = nowMinutes();
@@ -866,7 +872,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
       </Rail>
 
       {/* Top 10: 120 x 180 posters overlapping their numerals */}
-      <TopTenRail items={SPORT_TOP10} width={120} height={180} gap={12} positions={SPORT_TOP_AT} onTap={i => demo(`#${i + 1} in Top 10`)} />
+      <TopTenRail items={SPORT_TOP10} width={120} height={180} gap={12} onTap={i => demo(`#${i + 1} in Top 10`)} />
 
       <Rail title="Hot off the Big Screen" gap={12}>{BIG_SCREEN.map((p, k) => <SmallPoster key={p.t} p={p} badge={k === 0} onTap={() => demo(p.t)} />)}</Rail>
 
@@ -901,7 +907,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         {SPORT_FOR_YOU.map((p, k) => (
           <button key={p.t} onClick={() => demo(p.t)} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[20px]" style={{ width: 250, height: 375 }}>
             <img src={p.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: p.pos ?? "center" }} />
-            <span className="absolute left-2 bottom-2 flex items-center gap-2">{ottOf(p.k) && <OttTag inline plat={ottOf(p.k)!} />}{k === 0 && <Badge label="4K" size={29.38} />}</span>
+            <span className="absolute left-2 bottom-2 flex items-center gap-2">{ottOf(p.k) && <OttTag inline plat={ottOf(p.k)!} />}{k === 0 && <StatusPill label="4K" />}</span>
           </button>
         ))}
       </Rail>
@@ -915,24 +921,13 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         {SHORT_DRAMAS.map(s => <SmallPoster key={s.img} p={{ img: a(`posters/shorts/${s.img}`), t: s.t }} plat={s.plat} onTap={() => demo(s.t)} />)}
       </Rail>
 
-      {/* Short highlights: 320 x 202 cards with their title over the picture (opens the Clips tab at that short) */}
-      <Rail title="" gap={12}>
-        {shorts.map((sh, i) => (
-          <button key={sh.img} onClick={() => onOpenShort(i)} className="relative shrink-0 overflow-hidden rounded-[12px] text-left" style={{ width: 320, height: 202 }}>
-            <img src={sh.img} alt="" className="w-full h-full object-cover" />
-            <span className="absolute inset-x-0 bottom-0" style={{ height: 110, background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.75))" }} />
-            <span className="absolute left-3 right-3 bottom-4 text-white truncate" style={{ fontSize: 22, lineHeight: 1.2 }}>{sh.title}</span>
-          </button>
-        ))}
-      </Rail>
-
       {/* AIS PLAY Exclusive: 253 x 380 posters */}
       <Rail title="AIS PLAY Exclusive" gap={16}>
         {SPORT_EXCLUSIVE.map((p, k) => (
-          <button key={p.t} onClick={() => demo(p.t)} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[20px]" style={{ width: 253.13, height: 379.68 }}>
-            <img src={p.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: p.pos ?? "center" }} />
-            {k === 0 && <span className="absolute" style={{ left: 8, top: 8 }}><Badge label="4K" size={25.78} /></span>}
-            {ottOf(p.k) && <OttTag plat={ottOf(p.k)!} />}
+          <button key={p.title} onClick={() => demo(p.title)} aria-label={p.title} className="relative shrink-0 overflow-hidden rounded-[20px] text-left" style={{ width: 253.13, height: 379.68 }}>
+            <img src={p.img} alt="" className="w-full h-full object-cover" />
+            {k === 0 && <span className="absolute left-2 top-2"><StatusPill label="4K" /></span>}
+            <PriceOverlay title={p.title} price={p.price} vat={p.vat} plat={p.plat} premium={!p.k || rules().showsCrown({ k: p.k })} />
           </button>
         ))}
       </Rail>
@@ -1005,17 +1000,18 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
 }
 
 // Top 10: posters overlapping their numerals, which sit centered on the poster's height
-function TopTenRail({ items, width, height, gap, positions, onTap }: {
-  items: { img: string; t: string; pos?: string; k?: string }[]; width: number; height: number; gap: number; positions: { at: number; slot: number }[]; onTap: (i: number) => void;
+function TopTenRail({ items, width, height, gap, onTap }: {
+  items: { img: string; t: string; pos?: string; k?: string }[]; width: number; height: number; gap: number; onTap: (i: number) => void;
 }) {
   const top = (height - 100) / 2;
   return (
     <Rail title="Top 10" gap={gap}>
       {items.map((p, i) => {
-        const art = TOP_ART[i], at = positions[i]?.at ?? (i === 9 ? 124 : 59.85);
+        const art = TOP_ART[i], ink = TOP_INK[i + 1];
+        const at = (art ? art.w : ink[1] - ink[0]) - TOP_TUCK;   // where the poster starts
         return (
-          <button key={p.img + i} onClick={() => onTap(i)} aria-label={`#${i + 1} in Top 10`} className="relative shrink-0" style={{ height, width: positions[i]?.slot ?? at + width }}>
-            {art ? <img src={art.img} alt="" className="absolute left-0 max-w-none" style={{ top, width: art.w, height: 100 }} /> : <TopNumeral n={i + 1} top={top} />}
+          <button key={p.img + i} onClick={() => onTap(i)} aria-label={`#${i + 1} in Top 10`} className="relative shrink-0" style={{ height, width: at + width }}>
+            {art ? <img src={art.img} alt="" className="absolute left-0 max-w-none" style={{ top, width: art.w, height: 100 }} /> : <TopNumeral n={i + 1} top={top} left={-ink[0]} />}
             <img src={p.img} alt="" className="absolute top-0 max-w-none rounded-[12px] object-cover" style={{ left: at, width, height, objectPosition: p.pos ?? "center" }} />
             {ottOf(p.k) && <OttTag plat={ottOf(p.k)!} x={at + 8} />}
           </button>
@@ -1037,9 +1033,7 @@ function PriceOverlay({ title, price, vat, plat, premium = true }: { title: stri
           <span className="truncate" style={{ fontSize: 10, lineHeight: "13px" }}>{vat}</span>
         </span>
         <span className="flex items-center gap-[7px]">
-          {premium && <span className="flex items-center justify-center gap-[2px] rounded-full px-[5px]" style={{ height: 15, fontSize: 9, fontWeight: 500, color: TAG_TEXT, background: TAG_BG }}>
-            <img src={iconCrown} alt="" style={{ width: 8, height: 8 }} />Premium
-          </span>}
+          {premium && <CrownFrame><img src={iconCrown} alt="Premium" width={CROWN_IN_FRAME} height={CROWN_IN_FRAME} /></CrownFrame>}
           <OttTag inline plat={plat} />
         </span>
       </span>
@@ -1114,16 +1108,15 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
         ))}
       </Rail>
 
-      <TopTenRail items={R.top10.map(x => ({ img: poster(x.k), t: C[x.k].t, k: x.k }))} width={135} height={202} gap={8} positions={MOVIE_TOP_AT} onTap={i => demo(`#${i + 1} in Top 10`)} />
+      <TopTenRail items={R.top10.map(x => ({ img: poster(x.k), t: C[x.k].t, k: x.k }))} width={135} height={202} gap={8} onTap={i => demo(`#${i + 1} in Top 10`)} />
       <Rail title="Hot off the Big Screen" gap={16}>{posters(R.hot)}</Rail>
       <Rail title="Short" more onMore={() => demo("Short")} gap={16}>{SHORT_DRAMAS.map(s => <MoviePoster key={s.img} p={{ img: a(`posters/shorts/${s.img}`), t: s.t }} plat={s.plat} onTap={() => demo(s.t)} />)}</Rail>
 
       <Rail title="For You" gap={16}>
-        {FOR_YOU_LIST.map((f, n) => { const m = C[f.k]; return (
+        {FOR_YOU_LIST.map(f => { const m = C[f.k]; return (
           <button key={f.k} onClick={() => demo(m.t)} aria-label={m.t} className="relative shrink-0 overflow-hidden rounded-[20px] text-left" style={{ width: 250, height: 375 }}>
             <img src={poster(f.k)} alt="" className="w-full h-full object-cover" />
-            {n > 0 && m.plat && <OttTag plat={m.plat} />}
-            {n === 0 && <PriceOverlay title={m.t} price={`${f.price} baht`} vat={`(VAT Included: ${(f.price * 1.07).toFixed(2)} baht)`} plat={m.plat ?? "monomax"} premium={rules().showsCrown({ k: f.k })} />}
+            <PriceOverlay title={m.t} price={`${f.price} baht`} vat={`(VAT Included: ${(f.price * 1.07).toFixed(2)} baht)`} plat={m.plat ?? "monomax"} premium={rules().showsCrown({ k: f.k })} />
           </button>
         ); })}
       </Rail>
@@ -1181,7 +1174,7 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
       <Rail title="Soon Leaving" gap={16}>{posters(LEAVING_LIST)}</Rail>
 
       {/* Seasonal / collection: big posters with their name over the bottom */}
-      <Rail title="" gap={16}>
+      <Rail title="Movie Collection" gap={16}>
         {MOVIE_SEASONAL.map(c => (
           <button key={c.t} onClick={() => demo(c.t)} className="relative shrink-0 overflow-hidden rounded-[20px] text-left" style={{ width: 250, height: 375 }}>
             <img src={c.img} alt="" className="w-full h-full object-cover" />
@@ -1198,7 +1191,7 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
 
 // a small rounded badge (Figma "Badge 1"); its padding scales with the text, as in the design
 function Badge({ label, size = 11, bg = TAG_BG }: { label: string; size?: number; bg?: string }) {
-  return <span className="inline-flex items-center justify-center rounded-full whitespace-nowrap" style={{ fontSize: size, fontWeight: 500, lineHeight: 1.17, padding: `0 ${size * 0.545}px`, color: bg === TAG_BG ? TAG_TEXT : "#fff", background: bg }}>{label}</span>;
+  return <span className="flex w-max items-center justify-center rounded-full whitespace-nowrap" style={{ fontSize: size, fontWeight: 500, lineHeight: 1.17, padding: `0 ${size * 0.545}px`, color: bg === TAG_BG ? TAG_TEXT : "#fff", background: bg }}>{label}</span>;
 }
 
 // a 104 x 156 poster on the Sport tab, with an optional 4K badge at the bottom left
@@ -1215,10 +1208,10 @@ function SmallPoster({ p, badge, plat, onTap }: { p: SportPoster; badge?: boolea
 }
 
 // Top 10 numerals past Figma's 1 to 3: text in the same size and gradient
-function TopNumeral({ n, top }: { n: number; top: number }) {
+function TopNumeral({ n, top, left }: { n: number; top: number; left: number }) {
   return (
-    <span className="absolute left-0 select-none" style={{
-      top, height: 100, fontSize: 140, fontWeight: 700, lineHeight: "100px", letterSpacing: n === 10 ? -10 : 0,
+    <span className="absolute select-none" style={{
+      top, left, height: 100, fontSize: 140, fontWeight: 700, lineHeight: "100px", letterSpacing: n === 10 ? -10 : 0,
       background: "linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05))",
       WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
     }}>{n}</span>
@@ -1316,19 +1309,18 @@ function ChooseButton({ onTap }: { onTap: () => void }) {
 // a status tag, the same shape and text as the other card tags: red with LIVE, white for a start time
 function StatusPill({ label, live }: { label: string; live?: boolean }) {
   return (
-    <span className="inline-flex items-center justify-center gap-1 rounded-full px-[9px] whitespace-nowrap" style={{ fontSize: 14, lineHeight: "18px", fontWeight: 500, color: live ? "#fff" : TAG_TEXT, background: live ? LIVE : TAG_BG }}>
+    <span className="flex w-max items-center justify-center gap-1 rounded-full px-[9px] whitespace-nowrap" style={{ fontSize: 14, lineHeight: "18px", fontWeight: 500, color: live ? "#fff" : TAG_TEXT, background: live ? LIVE : TAG_BG }}>
       {live && <span className="rounded-full bg-white shrink-0" style={{ width: 6, height: 6 }} />}{label}
     </span>
   );
 }
 
-function LivePill({ big, size }: { big?: boolean; size?: number }) {
-  const k = size ?? (big ? 2 : 1);
-  return (
-    <span className="inline-flex items-center rounded-full text-white" style={{ background: LIVE, height: 18 * k, gap: 4 * k, padding: `0 ${6 * k}px`, fontSize: 11 * k, fontWeight: 600 }}>
-      <span className="rounded-full bg-white" style={{ width: 6 * k, height: 6 * k }} />LIVE
-    </span>
-  );
+// the hero's LIVE and time tags: one height, on one line with the logo tag
+function HeroLive() {
+  return <span className="flex w-max items-center justify-center gap-1 rounded-full px-3 text-white" style={{ height: OTT_TAG.height, fontSize: 12, fontWeight: 600, background: LIVE }}><span className="rounded-full bg-white shrink-0" style={{ width: 6, height: 6 }} />LIVE</span>;
+}
+function HeroTime({ label }: { label: string }) {
+  return <span className="flex w-max items-center justify-center rounded-full px-3" style={{ height: OTT_TAG.height, fontSize: 12, fontWeight: 500, color: ON_SURFACE, border: "1px solid rgba(255,255,255,0.5)" }}>{label}</span>;
 }
 
 function Rail({ title, more, bigMore, smallTitle, onMore, gap = 12, padBottom = 0, children }: {

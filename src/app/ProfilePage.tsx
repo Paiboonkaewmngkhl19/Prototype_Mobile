@@ -1,14 +1,14 @@
 import { ScanLine, Headset, Bell, ChevronRight } from "lucide-react";
-import imgAvatar from "../assets/profile/avatar.png";
-import imgPremium from "../assets/home/store-banner.jpg";
+import imgAvatar from "../assets/shorts/avatar-user.png";
 import imgHeaderBg from "../assets/profile/screen-inox.png";
 import iconEdit from "../assets/profile/edit.svg";
 import iconRowChevron from "../assets/profile/chevron.svg";
 import iconLogout from "../assets/profile/logout.svg";
 import { CHANNELS, ChannelLogo, tvStore } from "./TVScreen";
 import { CATALOG, RAILS } from "./catalog";
-import { PAGE_BG, ON_SURFACE, ON_VARIANT, TOP_BAND_FADE, ACCOUNT_CARD, TONAL, PANEL, PANEL_SOLID, GLASS_CARD, CHIP_BORDER } from "./theme";
+import { PAGE_BG, ON_SURFACE, ON_VARIANT, TOP_BAND_FADE, ACCOUNT_CARD, TONAL, GLASS_CARD, CHIP_BORDER } from "./theme";
 import { OttTag } from "./cardTags";
+import { SubscriptionCards } from "./StorePage";
 
 // ─── Profile (Figma "Prototype" file, Profile 230:64169) ────────────────────────────────────────────────────────
 // The Profile tab: scan / support / notifications, the profile card (avatar, name, account, Not Linked, and Link
@@ -19,11 +19,6 @@ const BASE = import.meta.env.BASE_URL;
 const a = (p: string) => `${BASE}${p}`;
 const FONT = "'Open Sans', sans-serif";
 const MY_LIST = RAILS.myList.slice(0, 5).map(x => ({ img: a(CATALOG[x.k].p ?? CATALOG[x.k].w ?? ""), plat: CATALOG[x.k].plat }));
-// Figma repeats one package as a placeholder; the second card shows another of the Store's packages
-const SUBSCRIPTIONS = [
-  { img: imgPremium, t: "Play Premium Plus", price: "449 Baht", until: "13 April 2025" },
-  { img: a("posters_portrait/topgun_m.jpg"), t: "Movie Max", price: "399 Baht", until: "13 April 2025", time: "00:00 PM" },
-];
 const SETTINGS = ["Settings", "Redeem", "Content Preference", "Payment Method", "Purchase History"];
 
 export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenStore, onOpenAccount, onToast }: {
@@ -35,7 +30,7 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
 
   return (
     <div className="absolute inset-x-0 top-0 z-[15] overflow-y-auto overflow-x-hidden profile-scroll" style={{ bottom, background: PAGE_BG, fontFamily: FONT }}>
-      <div className="relative flex flex-col gap-4">
+      <div className="relative flex flex-col gap-8">
         {/* Figma "Screen: Inox": the band behind the status bar and icons, the profile card overlapping its lower edge */}
         <img src={imgHeaderBg} alt="" className="absolute inset-x-0 top-0 w-full object-cover pointer-events-none" style={{ height: `calc(${topInset} + 92px)`, WebkitMaskImage: TOP_BAND_FADE, maskImage: TOP_BAND_FADE }} />
 
@@ -70,8 +65,8 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
           </div>
         </div>
 
-        {/* My Subscription: View all opens the Store */}
-        <section className="flex flex-col gap-2">
+        {/* My Subscription: the Store page's cards and spacing; View all opens the Store */}
+        <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between px-4">
             <span style={TITLE}>My Subscription</span>
             <button onClick={onOpenStore} className="flex items-center gap-2">
@@ -79,28 +74,7 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
               <span className="p-1"><ChevronRight size={16} color="#fff" /></span>
             </button>
           </div>
-          <div className="profile-rail flex gap-2 overflow-x-auto px-4">
-            {SUBSCRIPTIONS.map(s => (
-              <div key={s.t} className="shrink-0 flex flex-col gap-1 overflow-hidden rounded-[16px] pt-1" style={{ width: 289, background: "rgba(255,255,255,0.12)" }}>
-                <span className="text-center" style={{ fontSize: 12, lineHeight: "16px", letterSpacing: 0.4, color: ON_SURFACE }}>Bundle Package</span>
-                <div>
-                  <div className="flex items-start gap-2 p-3 rounded-t-[16px]" style={{ background: PANEL }}>
-                    <img src={s.img} alt="" className="rounded-[8px] object-cover shrink-0" style={{ width: 48, height: 48 }} />
-                    <span className="flex flex-1 flex-col justify-center gap-[2px] min-w-0 self-stretch">
-                      <span className="truncate" style={{ fontSize: 16, fontWeight: 500, lineHeight: "24px", color: ON_SURFACE }}>{s.t}</span>
-                      <span style={{ fontSize: 14, lineHeight: "20px", letterSpacing: 0.25, color: ON_VARIANT }}><span className="text-white">{s.price}</span>/Month</span>
-                    </span>
-                    <span className="flex items-center rounded-[4px] px-2 shrink-0" style={{ height: 20, fontSize: 10, fontWeight: 500, letterSpacing: 0.5, color: "#101010", background: "#9edb07" }}>Active</span>
-                  </div>
-                  <div className="flex items-baseline justify-between px-3 py-2 rounded-b-[12px]" style={{ background: PANEL_SOLID, fontSize: 12, lineHeight: "16px", letterSpacing: 0.4, color: ON_VARIANT }}>
-                    <span>Available until</span>
-                    <span className="flex gap-2"><span>{s.until}</span>{s.time && <span>{s.time}</span>}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <span className="shrink-0" style={{ width: 8 }} />
-          </div>
+          <SubscriptionCards rail="profile-rail" />
         </section>
 
         {/* settings list */}
