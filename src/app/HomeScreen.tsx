@@ -22,7 +22,6 @@ import imgChooseBanner from "../assets/home/choose-banner.png";
 import imgTop1 from "../assets/home/top-1.svg";
 import imgTop2 from "../assets/home/top-2.svg";
 import imgTop3 from "../assets/home/top-3.svg";
-import imgNetflix from "../assets/home/netflix-badge.png";
 import imgStoreBanner from "../assets/home/store-banner.jpg";
 import imgUclBg from "../assets/sport/ucl-bg.jpg";
 import lgUcl from "../assets/sport/lg-ucl.png";
@@ -38,8 +37,9 @@ import iconQaRental from "../assets/home/qa-rental.svg";
 import iconQaSetting from "../assets/home/qa-setting.svg";
 import { CHANNELS as TV_CHANNELS, Crown as TVCrown, ChannelLogo, clock, nowMinutes, scheduleFor, tvStore } from "./TVScreen";
 import { CATALOG as C, RAILS as R, CONTINUE_LIST, FOR_YOU_LIST, RENT_LIST, MY_RENTAL_LIST, LEAVING_LIST, SPORT_LIVE_LIST, SHORT_DRAMAS } from "./catalog";
-import { BAND_FADE, PAGE_BG, ON_SURFACE, ON_VARIANT, LIVE, PILL, PILL_RING, CHIP_BG, CHIP_BORDER } from "./theme";
+import { TAG_BG, TAG_TEXT, BAND_FADE, PAGE_BG, ON_SURFACE, ON_VARIANT, LIVE, PROGRESS, PROGRESS_TRACK, PILL, PILL_RING, CHIP_BG, CHIP_BORDER, GLASS_CARD, PANEL_SOLID } from "./theme";
 import { rules } from "./mobileRules";
+import { CrownFrame, CROWN_IN_FRAME, OttTag, ottSrc } from "./cardTags";
 
 // ─── Home tab (Figma "AIS PLAY / Home / Full Page", node 695:69713) ─────────────────────────────────────────────
 // The phone Home screen behind the bottom navigation's Home tab: a full-bleed hero carousel under the header and
@@ -48,8 +48,8 @@ import { rules } from "./mobileRules";
 
 const BASE = import.meta.env.BASE_URL;
 const a = (path: string) => `${BASE}${path}`;
-// the platform tag; AIS PLAY's own titles carry its logo
-const tag = (name: string) => name === "ais" ? a("badges/logo app/logoapp-cropped.png") : a(`badges/tag-${name}.png`);
+const tag = ottSrc;
+const ottOf = (k?: string) => k ? C[k]?.plat : undefined;
 const FONT = "'Open Sans', sans-serif";
 // titles and their artwork (catalog.ts, from the TV prototype): poster 2:3, wide 16:9, each falling back on the other
 const poster = (k: string) => a(C[k].p ?? C[k].w ?? "");
@@ -78,25 +78,24 @@ const UPCOMING = [
   { t: "CT14 Eala vs Jovic (R1)", sub: "WTA Tour", img: a("posters/upcoming/u4.png"), badge: "Tomorrow 6:00 PM" },
 ];
 
-const TOP10 = R.top10.map(x => poster(x.k));
 
 const EXCLUSIVE: { img: string; pos?: string; live?: boolean; title?: string; price?: string; vat?: string; plat?: string }[] = [
   { img: wide("assanee"), title: C.assanee.t, price: "199 baht", vat: "(VAT Included: 212.93 baht)", plat: C.assanee.plat },
-  { img: poster("missuni"), pos: "90% center" },
-  { img: poster("sophomores") },
-  { img: poster("bossckm") },
+  { img: poster("missuni"), pos: "90% center", plat: C.missuni.plat },
+  { img: poster("sophomores"), plat: C.sophomores.plat },
+  { img: poster("bossckm"), plat: C.bossckm.plat },
   { img: a("posters_portrait/ex3.jpg"), live: true },
 ];
 
 // ── Home rails added in the Figma redesign (Home file, PLAY:Home_fullPageAfterWatched 1063:111194) ──
 // Wireframe slots, filled with the artwork the app already has. tag: the badge on top (New / Top 10 / Leaving Soon);
-// netflix: the Netflix pill at the bottom left; k: its catalog key, for its crown (rules.js); plat: an OTT app's logo tag.
-type Poster = { img: string; t: string; k?: string; tag?: string; netflix?: boolean; plat?: string };
+// k: its catalog key, for its crown (rules.js); plat: an OTT app's logo tag.
+type Poster = { img: string; t: string; k?: string; tag?: string; plat?: string };
 
-// a rail of 2:3 posters from the catalog: the Netflix pill on Netflix titles, badges and crowns by position
+// a rail of 2:3 posters from the catalog, each with its OTT tag; badges by position
 const posterRail = (list: RailEntry[], tags: Record<number, string> = {}): Poster[] => list.map((x, i) => {
   const k = keyOf(x);
-  return { k, img: poster(k), t: C[k].t, tag: (typeof x === "object" ? x.badge : undefined) ?? tags[i], netflix: C[k].plat === "netflix" };
+  return { k, img: poster(k), t: C[k].t, tag: (typeof x === "object" ? x.badge : undefined) ?? tags[i], plat: C[k].plat };
 });
 const NEW_RELEASE = posterRail(R.hot, { 1: "New" });
 const NINETIES = posterRail(["spacejam", "sunrise", "fourweddings"], { 1: "Leaving Soon" });
@@ -106,8 +105,8 @@ const DATE_NIGHT = posterRail(R.dateNight, { 1: "New" });
 const BECAUSE_LIST = R.because.filter(x => x.k !== "hobbit");
 const BECAUSE = posterRail(BECAUSE_LIST, { 2: "Leaving Soon" });
 // Fresh episode, every week: posters with the latest episode under them
-const FRESH = [["house", 8], ["goodpartner", 5], ["blind", 3], ["vincenzo", 12], ["peacock", 6]].map(([k, ep]) => ({ img: poster(k as string), t: C[k as string].t, ep: `Episode ${ep}` }));
-const MY_LIST = R.myList.map(x => ({ img: wide(x.k), t: C[x.k].t }));
+const FRESH = [["house", 8], ["goodpartner", 5], ["blind", 3], ["vincenzo", 12], ["peacock", 6]].map(([k, ep]) => ({ img: poster(k as string), t: C[k as string].t, plat: C[k as string].plat, ep: `Episode ${ep}` }));
+const MY_LIST = R.myList.map(x => ({ img: wide(x.k), t: C[x.k].t, plat: C[x.k].plat }));
 const FEATURED = [{ img: imgFeatured1, t: "Masters Tournament: Final Round" }, { img: imgFeatured2, t: "Masters Tournament: Highlights" }, { img: imgFeatured3, t: "Masters Tournament: Featured Groups" }];
 // pictures without their own title art, so the collection name reads clearly over them
 const SEASONAL = [["summer", "Summer Blockbusters"], ["halloween", "Halloween Night"], ["fantasy", "Fantasy Worlds"], ["action", "Action Collection"], ["racing", "Speed & Racing"]].map(([f, t]) => ({ img: a(`posters_portrait/collection/${f}.jpg`), t }));
@@ -131,7 +130,9 @@ const CHOOSE: { t: string; img: string; dim: number; fontSize: number; crop: Rea
 const TOP_ART = [{ img: imgTop1, w: 40 }, { img: imgTop2, w: 68 }, { img: imgTop3, w: 71 }];
 const HOME_TOP_AT = [{ at: 28.85, slot: 163.85 }, { at: 25.15, slot: 152 }, { at: 59.85, slot: 194.85 }];
 // Hot Channel Programs: what's on now on the TV channels that have their own picture
-const HOT_PROGRAM = TV_CHANNELS.map((c, i) => ({ c, i })).filter(x => x.c.logo && !x.c.short).slice(0, 8);
+const channelIndex = (name: string) => TV_CHANNELS.findIndex(c => c.name === name);
+const HOT_PROGRAM = [["CNN", "CNN News", "dm-cnn.png"], ["3 HD", "Morning Stories", "dm-rueng.png"], ["BBC News", "BBC News", "dm-bbc.png"], ["CH7 HD", "Channel 7 News Insight", "dm-sanam7.png"], ["TPBS", "World Update with Thai PBS", "lc-1.png"], ["PPTV HD", "Open News Desk", "lc-2.png"], ["Nation TV", "Komchadluek", "lc-4.png"]]
+  .map(([tv, t, f]) => ({ i: channelIndex(tv), c: TV_CHANNELS[channelIndex(tv)], t, img: a(`posters/news/${f}`) }));
 
 // card text under a 16:9 picture (Figma Mobile/label/large and Mobile/body/small)
 const CARD_TITLE: React.CSSProperties = { fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.1, color: ON_SURFACE };
@@ -176,28 +177,28 @@ const FOOTBALL_FY: Clip[] = [{ img: stills("footballForYou", 1), t: "Paris Saint
 const BASKETBALL_FY: Clip[] = [{ img: stills("basketballForYou", 1), t: "Lakers vs Warriors Full Game Highlights", d: "8m" }, { img: stills("basketballForYou", 2), t: "Pacers vs Heat Full Game Highlights", d: "9m" }, { img: stills("basketballForYou", 3), t: "Pistons vs Knicks Full Game Highlights", d: "12m" }, { img: stills("basketballForYou", 4), t: "Kings vs Spurs Full Game Highlights", d: "10m" }, { img: stills("basketballForYou", 5), t: "Cavaliers vs Hawks Full Game Highlights", d: "9m" }, { img: stills("basketballForYou", 6), t: "Suns vs Thunder Full Game Highlights", d: "11m" }];
 const MOTORSPORT_FY: Clip[] = [{ img: stills("motorsportsForYou", 1), t: "2026 Australian GP Race Highlights", d: "14m" }, { img: stills("motorsportsForYou", 2), t: "2026 Indonesian GP Race Highlights", d: "13m" }, { img: stills("motorsportsForYou", 3), t: "2026 Japanese GP Best Moments", d: "6m" }, { img: stills("motorsportsForYou", 4), t: "2026 Austrian GP Race Highlights", d: "15m" }, { img: stills("motorsportsForYou", 5), t: "2026 San Marino GP Race Highlights", d: "14m" }, { img: stills("motorsportsForYou", 6), t: "2026 San Marino GP Best Moments", d: "7m" }];
 const SPORT_CHIPS = ["All", "Football", "Basketball", "Golf", "Tennis", "Badminton", "Motorsport"];
-const DOCUMENTARY: { img: string; t: string; pos?: string }[] = [
-  ...["mourinho", "beckham", "pele", "ronaldinho"].map(k => ({ img: poster(k), t: C[k].t })),
+const DOCUMENTARY: { img: string; t: string; pos?: string; plat?: string }[] = [
+  ...["mourinho", "beckham", "pele", "ronaldinho"].map(k => ({ img: poster(k), t: C[k].t, plat: C[k].plat })),
   ...[["giannis", "Giannis: The Marvelous Journey"], ["the-rise", "The Rise"], ["the-knockout", "The Knockout"], ["the-ascent", "The Ascent"], ["solo-echoes", "Solo Echoes"], ["tour-de-force", "Tour de Force"], ["match-point", "Match Point"]]
-    .map(([f, t]) => ({ img: a(`posters_portrait/sport/doc-${f}.jpg`), t })),
+    .map(([f, t]) => ({ img: a(`posters_portrait/sport/doc-${f}.jpg`), t, plat: "netflix" })),
 ];
 // ─── Movie tab (Figma "AIS PLAY: movie_mainPage_disney", node 236:65697; empty slots filled with the app's movie art) ───
 const movieSlide = (k: string, q = "HD"): Slide => ({ title: C[k].t, img: poster(k), platform: C[k].plat ?? "monomax", channel: "", genre: C[k].g?.[0], year: String(C[k].y), dur: C[k].len, rate: C[k].age, q });
 const MOVIE_SLIDES: Slide[] = [movieSlide("topgun"), movieSlide("john", "4K"), movieSlide("avatar", "4K"), movieSlide("f1"), movieSlide("venom")];
 const MOVIE_CHIPS = ["All", "Action", "Comedy", "Anime", "Horror"];
 
-const MOVIE_JUMP: { t: string; img: string; crop?: React.CSSProperties; left: string; pct: number; badge?: string }[] = [
-  { t: "Don't Look Up", img: imgMovieJump1, crop: { width: "106%", height: "245.26%", left: "-3%", top: "-36.65%" }, left: "55m left", pct: 44 },
+const MOVIE_JUMP: { t: string; img: string; crop?: React.CSSProperties; left: string; pct: number; badge?: string; plat?: string }[] = [
+  { t: "Don't Look Up", img: imgMovieJump1, crop: { width: "106%", height: "245.26%", left: "-3%", top: "-36.65%" }, left: "55m left", pct: 44, plat: "netflix" },
   { t: "S1: Ep.5", img: imgMovieJump2, crop: { width: "103.5%", height: "277.23%", left: 0, top: "-41.94%" }, left: "72m left", pct: 44, badge: "Today 21:00PM" },
-  ...CONTINUE_LIST.slice(1, 3).map(c => ({ t: C[c.k].t, img: wide(c.k), left: `${c.of - c.w}m left`, pct: Math.round(c.w / c.of * 100) })),
+  ...CONTINUE_LIST.slice(1, 3).map(c => ({ t: C[c.k].t, img: wide(c.k), plat: C[c.k].plat, left: `${c.of - c.w}m left`, pct: Math.round(c.w / c.of * 100) })),
 ];
-const MOVIE_FRESH = [["lastking", 8], ["vincenzo", 3], ["house", 4], ["goodpartner", 5], ["blind", 7]].map(([k, ep]) => ({ img: poster(k as string), t: C[k as string].t, ep: `Episode ${ep}` }));
-const MOVIE_DISNEY = ["endgame", "loki", "encanto", "spider", "prada"].map(k => ({ img: wide(k), t: C[k].t }));
-const MOVIE_MY_LIST: { img: string; t: string; netflix?: boolean; crop?: React.CSSProperties }[] = [
-  { img: imgMovieList1, t: "The Shawshank Redemption", netflix: true }, { img: imgMovieList2, t: "Parasite", netflix: true, crop: { width: "109%", height: "109.4%", left: "-2.47%", top: "-4.7%" } },
-  ...R.myList.slice(0, 4).map(x => ({ img: wide(x.k), t: C[x.k].t, netflix: C[x.k].plat === "netflix" })),
+const MOVIE_FRESH = [["lastking", 8], ["vincenzo", 3], ["house", 4], ["goodpartner", 5], ["blind", 7]].map(([k, ep]) => ({ img: poster(k as string), t: C[k as string].t, plat: C[k as string].plat, ep: `Episode ${ep}` }));
+const MOVIE_DISNEY = ["endgame", "loki", "encanto", "spider", "prada"].map(k => ({ img: wide(k), t: C[k].t, plat: C[k].plat }));
+const MOVIE_MY_LIST: { img: string; t: string; plat?: string; crop?: React.CSSProperties }[] = [
+  { img: imgMovieList1, t: "The Shawshank Redemption", plat: "netflix" }, { img: imgMovieList2, t: "Parasite", plat: "netflix", crop: { width: "109%", height: "109.4%", left: "-2.47%", top: "-4.7%" } },
+  ...R.myList.slice(0, 4).map(x => ({ img: wide(x.k), t: C[x.k].t, plat: C[x.k].plat })),
 ];
-const MOVIE_RENTALS = MY_RENTAL_LIST.map(k => ({ img: wide(k), t: C[k].t, netflix: C[k].plat === "netflix" }));
+const MOVIE_RENTALS = MY_RENTAL_LIST.map(k => ({ img: wide(k), t: C[k].t, plat: C[k].plat }));
 
 const ACTORS = ["Keanu Reeves", "Tom Cruise", "Brad Pitt", "Zendaya", "Tom Hardy", "Pedro Pascal", "Johnny Depp", "Ariana Grande", "Song Joong-ki"].map((t, i) => ({ t, img: a(`posters/actors/${t.toLowerCase().replace(/ /g, "-")}.jpg`), fav: i < 2 }));
 const MOVIE_SEASONAL = [["halloween", "Halloween Movies"], ["action", "Action Collection"], ["fantasy", "Fantasy Worlds"]].map(([f, t]) => ({ img: a(`posters_portrait/collection/${f}.jpg`), t }));
@@ -209,7 +210,7 @@ const MOVIE_SERIES = MOVIE_POOL.filter(isSeries).slice(0, 8);
 const MOVIE_TOP_AT = [{ at: 28.85, slot: 163.85 }, { at: 38, slot: 173 }, { at: 59.85, slot: 194.85 }];
 
 // the TV tab's sports channels (TV Guide, Hot Channel and Sports Channels rails)
-const SPORT_TV = TV_CHANNELS.map((c, i) => ({ c, i })).filter(x => x.c.cats.includes("Sports"));
+const SPORT_TV = ["PLAY SPORTS (Football)", "MUTV", "Real Madrid TV", "W-Sports", "Asian Games 902", "Asian Games 907", "PLAY SPORTS (NBA)", "PLAY SPORTS (NFL)"].map(n => ({ i: TV_CHANNELS.findIndex(c => c.name === n), c: TV_CHANNELS.find(c => c.name === n)! }));
 const MOVIE_TV = TV_CHANNELS.map((c, i) => ({ c, i })).filter(x => x.c.cats.includes("Movies & Series"));
 
 // ── Sport tab rails added from Figma "AIS PLAY / Home / Full Page" (230:59163), a wireframe filled with sports artwork ──
@@ -233,8 +234,8 @@ const SPORT_MY_LIST = [
 // the sports items of Live and Upcoming
 // the channel a programme that's on now plays on (rules.js: a live card goes straight to its channel)
 const liveChannel = (t: string) => {
-  const tv = SPORT_LIVE_LIST.find(m => m.t === t)?.tv, byName = TV_CHANNELS.findIndex(c => c.name === tv), byProgram = TV_CHANNELS.findIndex(c => c.program.includes(t));
-  return byName >= 0 ? byName : byProgram >= 0 ? byProgram : TV_CHANNELS.findIndex(c => c.no === "61");
+  const tv = t === "Liverpool vs Brentford" ? "MONOMAX 1" : SPORT_LIVE_LIST.find(m => m.t === t)?.tv, byName = TV_CHANNELS.findIndex(c => c.name === tv);
+  return byName >= 0 ? byName : TV_CHANNELS.findIndex(c => c.name === "PLAY SPORTS (Football)");
 };
 const LEAGUE_NAME: Record<string, string> = { ucl: "UEFA Champions League", nba: "NBA", nfl: "NFL", bundesliga: "Bundesliga", "": "Club Friendly" };
 const SPORT_LIVE = SPORT_LIVE_LIST.map((m, i) => ({ t: m.t, sub: LEAGUE_NAME[m.lg] ?? "", img: stills("liveUpcoming", Number(m.n)), live: m.live, badge: m.when ?? undefined, premium: i === 1 }));
@@ -340,7 +341,6 @@ export default function HomeScreen({
   const slides = slidesFor(tab);
   const s = slides[slide % slides.length];
   const sport = tab === "Sports", movie = tab === "Movie";
-  const chipRowH = movie ? 44 : 40;   // the docked filter row
 
   return (
     <div className="absolute inset-x-0 top-0 z-[15]" style={{ bottom, background: PAGE_BG, fontFamily: FONT }}>
@@ -391,7 +391,7 @@ export default function HomeScreen({
           <div className="relative overflow-hidden" style={{
             // chips: 40px row + padding; folded: a 20px subtitle line
             // folded, it's pulled up into the title row's bottom space so the subtitle sits right under "Sports"
-            height: chipsFolded && !tabsOn ? 28 : (tabsOn ? 16 : 4) + chipRowH + 12,
+            height: chipsFolded && !tabsOn ? 28 : (tabsOn ? 16 : 4) + 40 + 12,
             marginTop: chipsFolded && !tabsOn ? -8 : 0,
             transition: "height .3s cubic-bezier(.2,0,0,1), margin-top .3s cubic-bezier(.2,0,0,1)",
           }}>
@@ -399,7 +399,7 @@ export default function HomeScreen({
               paddingTop: tabsOn ? 16 : 4,
               opacity: chipsFolded && !tabsOn ? 0 : 1, transform: chipsFolded && !tabsOn ? "translateY(-12px)" : "none",
               pointerEvents: chipsFolded && !tabsOn ? "none" : "auto",
-            }}>{movie ? <MovieChips chip={chip} onPick={onChip} /> : <SportChips chip={chip} onPick={onChip} />}</div>
+            }}>{movie ? <FilterChips items={MOVIE_CHIPS} chip={chip} onPick={onChip} /> : <SportChips chip={chip} onPick={onChip} />}</div>
             {/* subtitle under the "⌄ Sport" title, lined up with its text; tapping it brings the chips back; the title's ⌄ expands both tabs and chips */}
             <button onClick={() => setChipsFolded(false)} aria-label="Show sport filters"
               className="absolute top-0 flex items-center transition-all duration-300 whitespace-nowrap"
@@ -476,13 +476,13 @@ export default function HomeScreen({
               <div className="flex flex-col gap-2 w-full py-2">
                 <div className="flex items-center gap-[10px]">
                   <h2 ref={titleRef} className="flex-1 m-0" style={{ fontSize: 22, fontWeight: 600, lineHeight: "28px", color: ON_SURFACE, textShadow: "0 2px 10px rgba(0,0,0,.5)" }}>{s.title}</h2>
-                  <button onClick={() => demo("More")} aria-label="More" className="p-[6px] rounded-full flex items-center justify-center shrink-0" style={{ border: "1px solid #5a5a5a" }}><img src={iconMovieMore} alt="" /></button>
+                  <button onClick={() => demo("More")} aria-label="More" className="p-[6px] rounded-full flex items-center justify-center shrink-0" style={{ border: `1px solid ${CHIP_BORDER}` }}><img src={iconMovieMore} alt="" /></button>
                 </div>
                 <div className="flex items-center gap-2 overflow-hidden" style={{ height: 32, fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.1, color: ON_SURFACE }}>
-                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain shrink-0" style={{ width: 48, height: 32, borderRadius: 8 }} />
+                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain shrink-0" style={{ width: 30, height: 20, borderRadius: 9999 }} />
                   <span className="shrink-0">{s.genre}</span><span className="shrink-0">{s.year}</span><span className="shrink-0">{s.dur}</span>
                   <span className="flex items-center gap-1 shrink-0">
-                    {[s.rate, s.q].map(x => <span key={x} className="rounded-[14px] px-2 py-1" style={{ border: "1px solid #5a5a5a", lineHeight: "normal", letterSpacing: 0 }}>{x}</span>)}
+                    {[s.rate, s.q].map(x => <span key={x} className="rounded-[14px] px-2 py-1" style={{ border: `1px solid ${CHIP_BORDER}`, lineHeight: "normal", letterSpacing: 0 }}>{x}</span>)}
                   </span>
                 </div>
               </div>
@@ -495,7 +495,7 @@ export default function HomeScreen({
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain" style={{ width: 45, height: 30, borderRadius: 6 }} />
+                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain" style={{ width: 30, height: 20, borderRadius: 9999 }} />
                   {s.live && <LivePill size={1.5} />}
                   {s.time && <span className="flex items-center rounded-full px-3" style={{ height: 26, fontSize: 12, color: ON_SURFACE, border: "1px solid rgba(255,255,255,0.5)" }}>{s.time}</span>}
                 </div>
@@ -504,23 +504,23 @@ export default function HomeScreen({
             <div className="flex flex-col items-center gap-2 w-full">
                 <h2 ref={titleRef} className="text-white text-center m-0" style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.2, letterSpacing: -0.2, textShadow: "0 2px 10px rgba(0,0,0,.5)" }}>{s.title}</h2>
                 <div className="flex items-center gap-3">
-                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain" style={{ width: 30, height: 20, borderRadius: 6 }} />
+                  <img src={tag(s.platform)} alt={s.platform} className="block object-contain" style={{ width: 30, height: 20, borderRadius: 9999 }} />
                   <span style={{ fontSize: 11, color: ON_SURFACE }}>{s.channel}</span>
                 </div>
                 {(s.live || s.time) && (
                   <div className="flex items-center gap-[9px]">
                     {s.live && <StatusPill label="LIVE" live />}
-                    {s.time && <span className="flex items-center rounded-[10px] px-[7px]" style={{ height: 20, fontSize: 11, fontWeight: 500, color: ON_SURFACE, border: "0.55px solid #5a5a5a" }}>{s.time}</span>}
+                    {s.time && <span className="flex items-center rounded-[10px] px-[7px]" style={{ height: 20, fontSize: 11, fontWeight: 500, color: ON_SURFACE, border: `0.55px solid ${CHIP_BORDER}` }}>{s.time}</span>}
                   </div>
                 )}
               </div>
             )}
             <div ref={playRowRef} className={`flex items-center w-full ${movie ? "gap-3" : "gap-4"}`}>
-              <button onClick={() => demo(s.live ? "Watch live" : "Play")} className="flex-1 flex items-center justify-center gap-2 rounded-full px-4 py-2" style={{ background: "#f0f0f0", height: sport ? 44 : 48, boxShadow: sport ? "none" : "0 4px 4px rgba(0,0,0,0.2)" }}>
+              <button onClick={() => demo(s.live ? "Watch live" : "Play")} className="flex-1 flex items-center justify-center gap-2 rounded-[10px] px-4 py-2" style={{ background: "#f0f0f0", height: sport ? 44 : 48, boxShadow: sport ? "none" : "0 4px 4px rgba(0,0,0,0.2)" }}>
                 {movie ? <img src={iconMoviePlay} alt="" /> : sport ? <Play size={20} fill="#282828" stroke="#282828" /> : <Play size={24} fill="none" stroke="#282828" strokeWidth={2} />}
                 <span style={{ fontSize: 16, fontWeight: sport ? 600 : 700, color: "#282828" }}>{s.live ? "Watch Live" : "Play"}</span>
               </button>
-              {!movie && <button onClick={() => toggleList(s.title)} aria-label={myList.has(s.title) ? "Remove from My List" : "Add to My List"} aria-pressed={myList.has(s.title)} className="w-10 h-10 rounded-full flex items-center justify-center" style={{ border: sport ? "1.5px solid rgba(255,255,255,0.85)" : "1px solid #5a5a5a" }}>
+              {!movie && <button onClick={() => toggleList(s.title)} aria-label={myList.has(s.title) ? "Remove from My List" : "Add to My List"} aria-pressed={myList.has(s.title)} className="w-10 h-10 rounded-full flex items-center justify-center" style={{ border: sport ? "1.5px solid rgba(255,255,255,0.85)" : `1px solid ${CHIP_BORDER}` }}>
                 {myList.has(s.title) ? <Check size={sport ? 22 : 24} className="text-white" /> : <Plus size={sport ? 22 : 24} className="text-white" />}
               </button>}
             </div>
@@ -529,8 +529,8 @@ export default function HomeScreen({
               {slides.map((_, i) => (
                 <button key={i} aria-label={`Slide ${i + 1}`} onClick={() => { setSlide(i); setTick(t => t + 1); }}
                   className="relative rounded-full transition-all duration-300"
-                  style={{ height: 8, width: i === slide ? 24 : 8, background: "#666" }}>
-                  {i === slide && <span className="absolute left-0 top-0 rounded-full" style={{ width: 8, height: 8, background: "#e6e6e6" }} />}
+                  style={{ height: 8, width: i === slide ? 24 : 8, background: "rgba(255,255,255,0.35)" }}>
+                  {i === slide && <span className="absolute left-0 top-0 rounded-full" style={{ width: 8, height: 8, background: ON_SURFACE }} />}
                 </button>
               ))}
             </div>
@@ -545,9 +545,9 @@ export default function HomeScreen({
               <button key={c.t} onClick={() => demo(c.t)} className="flex flex-col gap-2 text-left shrink-0" style={{ width: 200 }}>
                 <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112 }}>
                   <img src={c.img} alt="" className="w-full h-full object-cover" />
-                  <img src={tag(c.plat)} alt={c.plat} className="absolute left-3 bottom-3 object-contain" style={{ width: 30, height: 20, borderRadius: 6 }} />
-                  <div className="absolute inset-x-0 bottom-0 h-[6px]" style={{ background: "#4a4a4a" }}>
-                    <div className="h-full" style={{ width: `${c.pct}%`, background: ON_VARIANT }} />
+                  <OttTag plat={c.plat} />
+                  <div className="absolute inset-x-0 bottom-0 h-[6px]" style={{ background: PROGRESS_TRACK }}>
+                    <div className="h-full" style={{ width: `${c.pct}%`, background: PROGRESS }} />
                   </div>
                 </div>
                 <span className="truncate" style={{ fontSize: 16, fontWeight: 500, lineHeight: "19px", color: ON_SURFACE }}>{c.t}</span>
@@ -557,7 +557,7 @@ export default function HomeScreen({
           </Rail>
 
           {/* Top 10: 135 x 202 posters overlapping their numerals, which sit centered on the poster's height */}
-          <TopTenRail items={TOP10.map(img => ({ img, t: "Top 10" }))} width={135} height={202} gap={8} positions={HOME_TOP_AT} onTap={i => demo(`#${i + 1} in Top 10`)} />
+          <TopTenRail items={R.top10.map(x => ({ img: poster(x.k), t: C[x.k].t, k: x.k }))} width={135} height={202} gap={8} positions={HOME_TOP_AT} onTap={i => demo(`#${i + 1} in Top 10`)} />
 
           {/* Live and Upcoming */}
           <Rail title="Live and Upcoming" gap={16}>
@@ -565,10 +565,10 @@ export default function HomeScreen({
               <button key={u.t} onClick={() => u.live ? onOpenChannel(liveChannel(u.t)) : demo(u.t)} className="flex flex-col gap-1 text-left shrink-0" style={{ width: 200 }}>
                 <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112 }}>
                   <img src={u.img} alt="" className="w-full h-full object-cover" />
-                  <span className="absolute left-3 top-3">
+                  <span className="absolute left-2 top-2">
                     {u.live ? <StatusPill label="LIVE" live /> : <StatusPill label={rules().label({ when: u.badge })} />}
                   </span>
-                  {u.premium && <img src={iconCrown} alt="Premium" className="absolute left-3 bottom-3" style={{ width: 20, height: 20 }} />}
+                  {u.premium && <CrownFrame className="absolute left-2 bottom-2"><img src={iconCrown} alt="Premium" width={CROWN_IN_FRAME} height={CROWN_IN_FRAME} /></CrownFrame>}
                 </div>
                 <span className="truncate" style={CARD_TITLE}>{u.t}</span>
                 <span style={CARD_SUB}>{u.sub}</span>
@@ -578,15 +578,15 @@ export default function HomeScreen({
 
           {/* Hot Channel Programs: what's on now on TV channels (same data as the TV tab); tapping plays the channel */}
           <Rail title="Hot Channel Programs" gap={16}>
-            {HOT_PROGRAM.map(({ c, i }) => {
+            {HOT_PROGRAM.map(({ c, i, t, img }) => {
               const now = nowMinutes(), on = scheduleFor(i).find(p => p.start <= now && now < p.end);
               return (
                 <button key={c.no} onClick={() => onOpenChannel(i)} className="flex flex-col gap-1 text-left shrink-0" style={{ width: 200 }}>
-                  <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112, background: "#3a3a3a" }}>
-                    <img src={c.poster} alt="" className="w-full h-full object-cover" />
-                    {c.premium && <span className="absolute left-3 bottom-3"><TVCrown c={c} size={20} /></span>}
+                  <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112, background: PANEL_SOLID }}>
+                    <img src={img} alt="" className={`w-full h-full ${t === "CNN News" ? "object-contain p-4" : "object-cover"}`} />
+                    {c.premium && <span className="absolute left-2 bottom-2"><TVCrown c={c} size={20} framed /></span>}
                   </div>
-                  <span className="truncate" style={CARD_TITLE}>{c.program}</span>
+                  <span className="truncate" style={CARD_TITLE}>{t}</span>
                   <span style={CARD_SUB}>{on ? `${clock(on.start)}-${clock(on.end)}` : c.name}</span>
                 </button>
               );
@@ -599,8 +599,9 @@ export default function HomeScreen({
           {/* My list */}
           <Rail title="My List" gap={16}>
             {MY_LIST.map(m => (
-              <button key={m.t} onClick={() => demo(m.t)} aria-label={m.t} className="shrink-0 overflow-hidden rounded-[12px]" style={{ width: 200, height: 112 }}>
+              <button key={m.t} onClick={() => demo(m.t)} aria-label={m.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 200, height: 112 }}>
                 <img src={m.img} alt="" className="w-full h-full object-cover" />
+                {m.plat && <OttTag plat={m.plat} />}
               </button>
             ))}
           </Rail>
@@ -610,7 +611,8 @@ export default function HomeScreen({
             {EXCLUSIVE.map(e => (
               <button key={e.img} onClick={() => demo("AIS PLAY Exclusive")} className="relative shrink-0 overflow-hidden rounded-[20px] text-left" style={{ width: 250, height: 375 }}>
                 <img src={e.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: e.pos ?? "center" }} />
-                {e.live && <span className="absolute left-3 top-3"><StatusPill label="LIVE" live /></span>}
+                {e.live && <span className="absolute left-2 top-2"><StatusPill label="LIVE" live /></span>}
+                {!e.title && e.plat && <OttTag plat={e.plat} />}
                 {e.title && <PriceOverlay title={e.title} price={e.price ?? ""} vat={e.vat ?? ""} plat={e.plat ?? "monomax"} premium={rules().showsCrown({ k: "assanee" })} />}
               </button>
             ))}
@@ -660,7 +662,7 @@ export default function HomeScreen({
           <Rail title="Fresh episode, every week" gap={16}>
             {FRESH.map(f => (
               <button key={f.t} onClick={() => demo(f.t)} className="flex flex-col gap-2 text-left shrink-0" style={{ width: 135 }}>
-                <img src={f.img} alt="" className="w-full rounded-[12px] object-cover" style={{ height: 202 }} />
+                <span className="relative block"><img src={f.img} alt="" className="w-full rounded-[12px] object-cover" style={{ height: 202 }} />{f.plat && <OttTag plat={f.plat} />}</span>
                 <span className="truncate" style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.15, color: ON_SURFACE }}>{f.ep}</span>
               </button>
             ))}
@@ -686,7 +688,7 @@ export default function HomeScreen({
               <button key={k.t} onClick={() => demo(k.t)} className="flex flex-col gap-1 text-left shrink-0" style={{ width: 95 }}>
                 <div className="relative overflow-hidden rounded-[11px]" style={{ width: 95, height: 95 }}>
                   <img src={k.img} alt="" className="w-full h-full object-cover" />
-                  {k.pr && <img src={iconCrown} alt="Premium" className="absolute" style={{ left: 12, bottom: 12, width: 15, height: 15 }} />}
+                  {k.pr && <CrownFrame className="absolute left-2 bottom-2"><img src={iconCrown} alt="Premium" width={CROWN_IN_FRAME} height={CROWN_IN_FRAME} /></CrownFrame>}
                 </div>
                 <span className="truncate" style={{ fontSize: 12, fontWeight: 500, lineHeight: "14px", color: ON_SURFACE }}>{k.t}</span>
                 <span className="truncate" style={{ fontSize: 10, lineHeight: "12px", color: ON_VARIANT }}>{k.sub}</span>
@@ -705,7 +707,7 @@ export default function HomeScreen({
           {/* Quick access: a 2 x 2 grid of cards */}
           <section className="grid grid-cols-2 gap-6 px-4 pb-[60px]">
             {QUICK.map(q => (
-              <button key={q.t} onClick={() => demo(q.t)} className="flex flex-col justify-between text-left rounded-[8px]" style={{ height: 95, padding: "8px 9px", background: "#4a4a4a" }}>
+              <button key={q.t} onClick={() => demo(q.t)} className="flex flex-col justify-between text-left rounded-[8px]" style={{ height: 95, padding: "8px 9px", background: GLASS_CARD }}>
                 <span className="flex items-start justify-between gap-1 w-full">
                   <span style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.15, color: "#f0f0f0" }}>{q.t}</span>
                   <span className="p-1 shrink-0"><ChevronRight size={16} className="text-white" /></span>
@@ -721,18 +723,6 @@ export default function HomeScreen({
         )}
       </div>
       <style>{`
-        /* provider tag logos: a rounded square in the logo's own colour (channel logos stay round) */
-        img[src*="badges/tag-"]{border-radius:6px !important;}
-        img[src*="badges/tag-netflix"], img[src*="badges/tag-hbo"]{background:#000 !important;}
-        img[src*="badges/tag-prime"]{background:#1a98ff !important;}
-        img[src*="badges/tag-disney"]{background:#042437 !important;}
-        img[src*="badges/tag-viu"]{background:#ffbf00 !important;}
-        img[src*="badges/tag-monomax"]{background:#fff !important;}
-        /* the short-drama apps: their square icon, cropped to fill the tag */
-        img[src*="badges/tag-reelshort"], img[src*="badges/tag-dramabox"]{object-fit:cover !important;background:#ff2a5f !important;}
-        img[src*="badges/tag-shortmax"]{object-fit:cover !important;background:#000 !important;}
-        img[src*="badges/tag-wetv"]{object-fit:cover !important;background:#fff !important;}
-        img[src*="badges/tag-iqiyi"]{object-fit:cover !important;background:#00db59 !important;}
         .home-scroll{scrollbar-width:none}.home-scroll::-webkit-scrollbar,.home-rail::-webkit-scrollbar{display:none}.home-rail{scrollbar-width:none}`}</style>
     </div>
   );
@@ -782,9 +772,9 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
           <button key={c.t} onClick={() => demo(c.t)} className="flex flex-col gap-2 text-left shrink-0" style={{ width: 200 }}>
             <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112 }}>
               <img src={c.img} alt="" className="w-full h-full object-cover" />
-              <span className="absolute left-3 bottom-3"><Badge label="4K" /></span>
-              <div className="absolute inset-x-0 bottom-0 h-[6px]" style={{ background: "#4a4a4a" }}>
-                <div className="h-full" style={{ width: `${c.pct}%`, background: ON_VARIANT }} />
+              <span className="absolute left-2 bottom-2"><Badge label="4K" /></span>
+              <div className="absolute inset-x-0 bottom-0 h-[6px]" style={{ background: PROGRESS_TRACK }}>
+                <div className="h-full" style={{ width: `${c.pct}%`, background: PROGRESS }} />
               </div>
             </div>
             <span className="truncate" style={{ fontSize: 16, fontWeight: 500, lineHeight: "19px", color: ON_SURFACE }}>{c.t}</span>
@@ -829,7 +819,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
                 // overflow hidden + fixed widths all the way down: iOS Safari lets text in a <button> grow past its
                 // width otherwise, pushing the title out of the card
                 <button key={c.no} onClick={() => onOpenChannel(i)} className="relative text-left rounded-[12px] shrink-0 flex flex-col justify-between p-3 overflow-hidden"
-                  style={{ width: 300, minWidth: 300, maxWidth: 300, height: 94, background: "linear-gradient(180deg, rgba(161,161,161,.25), rgba(65,65,65,.25))" }}>
+                  style={{ width: 300, minWidth: 300, maxWidth: 300, height: 94, background: GLASS_CARD }}>
                   <div className="flex items-start gap-2 w-full min-w-0">
                     <ChannelLogo c={c} size={32} />
                     <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
@@ -866,8 +856,8 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
           <button key={u.t} onClick={() => u.live ? onOpenChannel(liveChannel(u.t)) : demo(u.t)} className="flex flex-col gap-1 text-left shrink-0" style={{ width: 200 }}>
             <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112 }}>
               <img src={u.img} alt="" className="w-full h-full object-cover" />
-              <span className="absolute left-3 top-3"><Badge label={u.live ? "LIVE" : rules().label({ when: u.badge })} bg={u.live ? LIVE : undefined} /></span>
-              {u.premium && <img src={iconCrown} alt="Premium" className="absolute left-3 bottom-3" style={{ width: 20, height: 20 }} />}
+              <span className="absolute left-2 top-2"><StatusPill label={u.live ? "LIVE" : rules().label({ when: u.badge })} live={u.live} /></span>
+              {u.premium && <CrownFrame className="absolute left-2 bottom-2"><img src={iconCrown} alt="Premium" width={CROWN_IN_FRAME} height={CROWN_IN_FRAME} /></CrownFrame>}
             </div>
             <span className="truncate" style={CARD_TITLE}>{u.t}</span>
             <span style={CARD_SUB}>{u.sub}</span>
@@ -901,7 +891,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         {SPORT_MY_LIST.map((m, k) => (
           <button key={m.t} onClick={() => demo(m.t)} aria-label={m.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 222, height: 124.44 }}>
             <img src={m.img} alt="" className="w-full h-full object-cover" />
-            {k === 0 && <span className="absolute" style={{ left: 12, bottom: 12, fontSize: 12.22, fontWeight: 500, lineHeight: 1.17, color: ON_SURFACE, textShadow: "0 1px 3px rgba(0,0,0,.6)" }}>4K</span>}
+            {k === 0 && <span className="absolute left-2 top-2"><Badge label="4K" size={12.22} /></span>}
           </button>
         ))}
       </Rail>
@@ -911,7 +901,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         {SPORT_FOR_YOU.map((p, k) => (
           <button key={p.t} onClick={() => demo(p.t)} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[20px]" style={{ width: 250, height: 375 }}>
             <img src={p.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: p.pos ?? "center" }} />
-            {k === 0 && <span className="absolute" style={{ left: 12, bottom: 12 }}><Badge label="4K" size={29.38} /></span>}
+            <span className="absolute left-2 bottom-2 flex items-center gap-2">{ottOf(p.k) && <OttTag inline plat={ottOf(p.k)!} />}{k === 0 && <Badge label="4K" size={29.38} />}</span>
           </button>
         ))}
       </Rail>
@@ -941,7 +931,8 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         {SPORT_EXCLUSIVE.map((p, k) => (
           <button key={p.t} onClick={() => demo(p.t)} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[20px]" style={{ width: 253.13, height: 379.68 }}>
             <img src={p.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: p.pos ?? "center" }} />
-            {k === 0 && <span className="absolute" style={{ left: 12, top: 12 }}><Badge label="4K" size={25.78} /></span>}
+            {k === 0 && <span className="absolute" style={{ left: 8, top: 8 }}><Badge label="4K" size={25.78} /></span>}
+            {ottOf(p.k) && <OttTag plat={ottOf(p.k)!} />}
           </button>
         ))}
       </Rail>
@@ -954,6 +945,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         {DOCUMENTARY.map(d => (
           <button key={d.t} onClick={() => demo(d.t)} aria-label={d.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 135, height: 202 }}>
             <img src={d.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: d.pos ?? "center" }} />
+            {d.plat && <OttTag plat={d.plat} />}
           </button>
         ))}
       </Rail>
@@ -969,11 +961,11 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
 
       {/* Seasonal / collection: a 16:9 banner with its name and a View button */}
       <section className="px-4">
-        <div className="relative overflow-hidden rounded-[13px] flex flex-col items-start justify-end gap-1" style={{ height: 192.94, padding: 8.57, background: "#3a3a3a" }}>
+        <div className="relative overflow-hidden rounded-[13px] flex flex-col items-start justify-end gap-1" style={{ height: 192.94, padding: 8.57, background: PANEL_SOLID }}>
           <img src={imgFeaturedBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
           <span className="absolute inset-x-0 bottom-0" style={{ height: 120, background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.7))" }} />
           <span className="relative text-white" style={{ fontSize: 19.29, lineHeight: "25.7px" }}>Golf Season</span>
-          <button onClick={() => demo("Golf Season")} className="relative flex items-center justify-between rounded-full" style={{ minHeight: 42.87, minWidth: 107.19, padding: "6.4px 15px", background: "#f0f0f0", boxShadow: "0 4.3px 4.3px rgba(0,0,0,0.2)" }}>
+          <button onClick={() => demo("Golf Season")} className="relative flex items-center justify-between rounded-[10px]" style={{ minHeight: 42.87, minWidth: 107.19, padding: "6.4px 15px", background: "#f0f0f0", boxShadow: "0 4.3px 4.3px rgba(0,0,0,0.2)" }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: "#282828" }}>View</span>
           </button>
         </div>
@@ -988,7 +980,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
           <button key={k.t} onClick={() => demo(k.t)} className="flex flex-col gap-1 text-left shrink-0" style={{ width: 95 }}>
             <div className="relative overflow-hidden rounded-[11px]" style={{ width: 95, height: 95 }}>
               <img src={k.img} alt="" className="w-full h-full object-cover" />
-              {k.pr && <span className="absolute left-3 bottom-3"><Badge label="4K" size={10.12} /></span>}
+              {k.pr && <span className="absolute left-2 bottom-2"><Badge label="4K" size={10.12} /></span>}
             </div>
             <span className="truncate" style={{ fontSize: 12, fontWeight: 500, lineHeight: "14px", color: ON_SURFACE }}>{k.t}</span>
             <span className="truncate" style={{ fontSize: 10, lineHeight: "12px", color: ON_VARIANT }}>{k.sub}</span>
@@ -1001,7 +993,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
         <h3 className="m-0" style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.2, letterSpacing: -0.2, color: ON_SURFACE, textShadow: "0 4px 4px rgba(0,0,0,0.4)" }}>Quick access</h3>
         <div className="grid grid-cols-3 gap-3 w-full">
           {[{ t: "My List", icon: <Plus size={20} className="text-white" /> }, { t: "Download", icon: <Download size={20} className="text-white" /> }, { t: "Games" }].map(q => (
-            <button key={q.t} onClick={() => demo(q.t)} className={`flex items-center justify-center gap-1 rounded-full ${q.t === "Download" ? "" : "justify-self-start"}`} style={{ minHeight: 40, minWidth: 100, padding: "6px", border: "1px solid rgba(240,240,240,0.5)" }}>
+            <button key={q.t} onClick={() => demo(q.t)} className={`flex items-center justify-center gap-1 rounded-[10px] ${q.t === "Download" ? "" : "justify-self-start"}`} style={{ minHeight: 40, minWidth: 100, padding: "6px", border: "1px solid rgba(240,240,240,0.5)" }}>
               {q.icon}
               <span className="whitespace-nowrap text-white" style={{ fontSize: 14, fontWeight: 500 }}>{q.t}</span>
             </button>
@@ -1014,7 +1006,7 @@ function SportRails({ demo, chip, onChip, chipsRef, chipsDocked, shorts, onOpenS
 
 // Top 10: posters overlapping their numerals, which sit centered on the poster's height
 function TopTenRail({ items, width, height, gap, positions, onTap }: {
-  items: { img: string; t: string; pos?: string }[]; width: number; height: number; gap: number; positions: { at: number; slot: number }[]; onTap: (i: number) => void;
+  items: { img: string; t: string; pos?: string; k?: string }[]; width: number; height: number; gap: number; positions: { at: number; slot: number }[]; onTap: (i: number) => void;
 }) {
   const top = (height - 100) / 2;
   return (
@@ -1025,6 +1017,7 @@ function TopTenRail({ items, width, height, gap, positions, onTap }: {
           <button key={p.img + i} onClick={() => onTap(i)} aria-label={`#${i + 1} in Top 10`} className="relative shrink-0" style={{ height, width: positions[i]?.slot ?? at + width }}>
             {art ? <img src={art.img} alt="" className="absolute left-0 max-w-none" style={{ top, width: art.w, height: 100 }} /> : <TopNumeral n={i + 1} top={top} />}
             <img src={p.img} alt="" className="absolute top-0 max-w-none rounded-[12px] object-cover" style={{ left: at, width, height, objectPosition: p.pos ?? "center" }} />
+            {ottOf(p.k) && <OttTag plat={ottOf(p.k)!} x={at + 8} />}
           </button>
         );
       })}
@@ -1044,10 +1037,10 @@ function PriceOverlay({ title, price, vat, plat, premium = true }: { title: stri
           <span className="truncate" style={{ fontSize: 10, lineHeight: "13px" }}>{vat}</span>
         </span>
         <span className="flex items-center gap-[7px]">
-          {premium && <span className="flex items-center justify-center gap-[2px] rounded-full px-[5px]" style={{ height: 15, fontSize: 9, fontWeight: 500, color: "#fff", background: "#3a3a3a" }}>
+          {premium && <span className="flex items-center justify-center gap-[2px] rounded-full px-[5px]" style={{ height: 15, fontSize: 9, fontWeight: 500, color: TAG_TEXT, background: TAG_BG }}>
             <img src={iconCrown} alt="" style={{ width: 8, height: 8 }} />Premium
           </span>}
-          <img src={tag(plat)} alt={plat} className="block object-contain" style={{ width: 30, height: 20, borderRadius: 6 }} />
+          <OttTag inline plat={plat} />
         </span>
       </span>
     </>
@@ -1058,13 +1051,13 @@ function PriceOverlay({ title, price, vat, plat, premium = true }: { title: stri
 function ChannelCard({ c, i, onTap }: { c: (typeof TV_CHANNELS)[number]; i: number; onTap: () => void }) {
   return (
     <button onClick={onTap} aria-label={`${c.name}, channel ${c.no}`} className="flex flex-col items-center p-2 rounded-[8px] shrink-0"
-      style={{ width: 104, background: "linear-gradient(180deg, rgba(161,161,161,0.25), rgba(65,65,65,0.25))", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
+      style={{ width: 104, background: GLASS_CARD, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
       <span className="flex justify-center pt-[2px]" style={{ width: 72, height: 72 }}><ChannelLogo c={c} size={56} /></span>
       <span className="flex flex-col items-center gap-2 w-full">
         <span className="block w-full truncate text-center text-white" style={{ fontSize: 14, lineHeight: "16px" }}>{c.name}</span>
         <span className="flex items-center justify-center gap-2 w-full">
           {tvStore.favs.has(i) && <img src={iconHeartGrey} alt="Favorite" width={16} height={16} />}
-          {c.premium && <TVCrown c={c} size={16} />}
+          {c.premium && <TVCrown c={c} size={16} framed />}
           <span className="flex items-center justify-center rounded-[4px] bg-black text-white" style={{ width: 39, height: 21, fontSize: 12, fontWeight: 600 }}>{c.no}</span>
         </span>
       </span>
@@ -1072,43 +1065,24 @@ function ChannelCard({ c, i, onTap }: { c: (typeof TV_CHANNELS)[number]; i: numb
   );
 }
 
-// Movie tab filter chips: solid when selected, outlined otherwise
-function MovieChips({ chip, onPick }: { chip: string; onPick: (c: string) => void }) {
-  return (
-    <div className="home-rail flex gap-3 overflow-x-auto overflow-y-hidden px-4">
-      {MOVIE_CHIPS.map(c => {
-        const on = c === chip;
-        return (
-          <button key={c} onClick={() => onPick(c)} aria-pressed={on} className="shrink-0 rounded-[8px] px-3" style={{
-            height: 44, minWidth: 48, fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.1,
-            color: on ? "#101010" : ON_SURFACE, background: on ? "#e8e8e8" : "transparent", border: on ? "2.2px solid #5a5a5a" : "2px solid rgba(232,232,232,0.5)",
-          }}>{c}</button>
-        );
-      })}
-      <span className="shrink-0" style={{ width: 4 }} />
-    </div>
-  );
-}
-
 // a 135 x 202 poster on the Movie tab
-function MoviePoster({ p, k, netflix, plat, tag: label, onTap }: { p: { img: string; t: string }; k?: string; netflix?: boolean; plat?: string; tag?: string; onTap: () => void }) {
+function MoviePoster({ p, k, plat, tag: label, onTap }: { p: { img: string; t: string }; k?: string; plat?: string; tag?: string; onTap: () => void }) {
   return (
-    <button onClick={onTap} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 135, height: 202, background: "#3a3a3a" }}>
+    <button onClick={onTap} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 135, height: 202, background: PANEL_SOLID }}>
       <img src={p.img} alt="" className="w-full h-full object-cover" />
-      {label && <span className="absolute left-3 top-3 rounded-[11px] px-[6px] whitespace-nowrap" style={{ fontSize: 11, fontWeight: 500, lineHeight: "16px", letterSpacing: 0.5, color: ON_SURFACE, background: "#3a3a3a" }}>{label}</span>}
-      {netflix && <img src={imgNetflix} alt="Netflix" className="absolute left-3 bottom-3 rounded-full object-cover" style={{ width: 42, height: 28 }} />}
+      {label && <span className="absolute left-2 top-2 rounded-[11px] px-[6px] whitespace-nowrap" style={{ fontSize: 11, fontWeight: 500, lineHeight: "16px", letterSpacing: 0.5, color: TAG_TEXT, background: TAG_BG }}>{label}</span>}
       {plat && <OttTag plat={plat} />}
-      {k && <TitleCrown k={k} right={netflix} />}
+      {k && <TitleCrown k={k} right={!!plat} />}
     </button>
   );
 }
 
 // a 200 x 112 card on the Movie tab, with the small Netflix badge
-function MovieWide({ p, onTap }: { p: { img: string; t: string; netflix?: boolean; crop?: React.CSSProperties }; onTap: () => void }) {
+function MovieWide({ p, onTap }: { p: { img: string; t: string; plat?: string; crop?: React.CSSProperties }; onTap: () => void }) {
   return (
-    <button onClick={onTap} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 200, height: 112, background: "#3a3a3a" }}>
+    <button onClick={onTap} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 200, height: 112, background: PANEL_SOLID }}>
       <img src={p.img} alt="" className={p.crop ? "absolute max-w-none" : "w-full h-full object-cover"} style={p.crop} />
-      {p.netflix && <img src={imgNetflix} alt="Netflix" className="absolute left-3 bottom-3 rounded-full object-cover" style={{ width: 30, height: 20 }} />}
+      {p.plat && <OttTag plat={p.plat} />}
     </button>
   );
 }
@@ -1119,19 +1093,20 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
 }) {
   const [favs, setFavs] = useState(() => new Set(ACTORS.filter(x => x.fav).map(x => x.t)));
   const toggleFav = (t: string) => setFavs(prev => { const n = new Set(prev); if (n.has(t)) n.delete(t); else n.add(t); return n; });
-  const posters = (list: RailEntry[]) => list.map(x => { const k = keyOf(x), m = C[k]; return <MoviePoster key={k} k={k} p={{ img: poster(k), t: m.t }} netflix={m.plat === "netflix"} onTap={() => demo(m.t)} />; });
+  const posters = (list: RailEntry[]) => list.map(x => { const k = keyOf(x), m = C[k]; return <MoviePoster key={k} k={k} p={{ img: poster(k), t: m.t }} plat={m.plat} onTap={() => demo(m.t)} />; });
   return (
     <div className="flex flex-col gap-6 pt-6 pb-10">
       {/* Genre chips, right under the hero; they dock inside the header on scroll, like Sport's */}
-      <div ref={chipsRef} style={{ visibility: chipsDocked ? "hidden" : "visible" }}><MovieChips chip={chip} onPick={onChip} /></div>
+      <div ref={chipsRef} style={{ visibility: chipsDocked ? "hidden" : "visible" }}><FilterChips items={MOVIE_CHIPS} chip={chip} onPick={onChip} /></div>
 
       <Rail title="Jump Right Back In" gap={16}>
         {MOVIE_JUMP.map(c => (
           <button key={c.t} onClick={() => demo(c.t)} className="flex flex-col gap-1 text-left shrink-0" style={{ width: 200 }}>
-            <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112, background: "#3a3a3a" }}>
+            <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112, background: PANEL_SOLID }}>
               <img src={c.img} alt="" className={c.crop ? "absolute max-w-none" : "w-full h-full object-cover"} style={c.crop} />
-              {c.badge && <span className="absolute left-3 top-3 rounded-[11px] px-[6px] whitespace-nowrap" style={{ fontSize: 12, fontWeight: 500, lineHeight: "16px", letterSpacing: 0.5, color: ON_SURFACE, background: "#3a3a3a" }}>{c.badge}</span>}
-              <div className="absolute inset-x-0 bottom-0 h-[6px]" style={{ background: "#4a4a4a" }}><div className="h-full" style={{ width: `${c.pct}%`, background: ON_VARIANT }} /></div>
+              {c.badge && <span className="absolute left-2 top-2"><StatusPill label={c.badge} /></span>}
+              {c.plat && <OttTag plat={c.plat} />}
+              <div className="absolute inset-x-0 bottom-0 h-[6px]" style={{ background: PROGRESS_TRACK }}><div className="h-full" style={{ width: `${c.pct}%`, background: PROGRESS }} /></div>
             </div>
             <span className="truncate" style={{ fontSize: 14, fontWeight: 500, lineHeight: "23px", letterSpacing: 0.15, color: ON_SURFACE }}>{c.t}</span>
             <span style={{ fontSize: 12, lineHeight: "19px", color: ON_VARIANT }}>{c.left}</span>
@@ -1139,7 +1114,7 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
         ))}
       </Rail>
 
-      <TopTenRail items={R.top10.map(x => ({ img: poster(x.k), t: C[x.k].t }))} width={135} height={202} gap={8} positions={MOVIE_TOP_AT} onTap={i => demo(`#${i + 1} in Top 10`)} />
+      <TopTenRail items={R.top10.map(x => ({ img: poster(x.k), t: C[x.k].t, k: x.k }))} width={135} height={202} gap={8} positions={MOVIE_TOP_AT} onTap={i => demo(`#${i + 1} in Top 10`)} />
       <Rail title="Hot off the Big Screen" gap={16}>{posters(R.hot)}</Rail>
       <Rail title="Short" more onMore={() => demo("Short")} gap={16}>{SHORT_DRAMAS.map(s => <MoviePoster key={s.img} p={{ img: a(`posters/shorts/${s.img}`), t: s.t }} plat={s.plat} onTap={() => demo(s.t)} />)}</Rail>
 
@@ -1147,6 +1122,7 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
         {FOR_YOU_LIST.map((f, n) => { const m = C[f.k]; return (
           <button key={f.k} onClick={() => demo(m.t)} aria-label={m.t} className="relative shrink-0 overflow-hidden rounded-[20px] text-left" style={{ width: 250, height: 375 }}>
             <img src={poster(f.k)} alt="" className="w-full h-full object-cover" />
+            {n > 0 && m.plat && <OttTag plat={m.plat} />}
             {n === 0 && <PriceOverlay title={m.t} price={`${f.price} baht`} vat={`(VAT Included: ${(f.price * 1.07).toFixed(2)} baht)`} plat={m.plat ?? "monomax"} premium={rules().showsCrown({ k: f.k })} />}
           </button>
         ); })}
@@ -1155,7 +1131,7 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
       <Rail title="Fresh Episode, Every Week" gap={16}>
         {MOVIE_FRESH.map(f => (
           <button key={f.t} onClick={() => demo(f.t)} className="flex flex-col gap-2 text-left shrink-0" style={{ width: 135 }}>
-            <img src={f.img} alt="" className="w-full rounded-[12px] object-cover" style={{ height: 202 }} />
+            <span className="relative block"><img src={f.img} alt="" className="w-full rounded-[12px] object-cover" style={{ height: 202 }} />{f.plat && <OttTag plat={f.plat} />}</span>
             <span className="truncate" style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.15, color: ON_SURFACE }}>{f.ep}</span>
           </button>
         ))}
@@ -1180,7 +1156,7 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
         </div>
         <div className="relative home-rail flex gap-3 overflow-x-auto overflow-y-hidden px-4">
           {MOVIE_DISNEY.map(p => (
-            <button key={p.t} onClick={() => demo(p.t)} aria-label={p.t} className="shrink-0 overflow-hidden rounded-[12px]" style={{ width: 200, height: 112, background: "#3a3a3a" }}><img src={p.img} alt="" className="w-full h-full object-cover" /></button>
+            <button key={p.t} onClick={() => demo(p.t)} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 200, height: 112, background: PANEL_SOLID }}><img src={p.img} alt="" className="w-full h-full object-cover" />{p.plat && <OttTag plat={p.plat} />}</button>
           ))}
           <span className="shrink-0" style={{ width: 4 }} />
         </div>
@@ -1189,14 +1165,14 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
       <Rail title="Movies" more onMore={() => demo("Movies")} gap={16}>{posters(MOVIE_FILMS)}</Rail>
       <Rail title="Series" more onMore={() => demo("Series")} gap={16}>{posters(MOVIE_SERIES)}</Rail>
       <Rail title="My List" more onMore={() => demo("My List")} gap={16}>{MOVIE_MY_LIST.map(p => <MovieWide key={p.t} p={p} onTap={() => demo(p.t)} />)}</Rail>
-      <Rail title="Rent or Buy" more onMore={() => demo("Rent or Buy")} gap={16}>{RENT_LIST.map(r => <MoviePoster key={r.k} k={r.k} p={{ img: poster(r.k), t: C[r.k].t }} tag={r.badge} netflix={C[r.k].plat === "netflix"} onTap={() => demo(C[r.k].t)} />)}</Rail>
+      <Rail title="Rent or Buy" more onMore={() => demo("Rent or Buy")} gap={16}>{RENT_LIST.map(r => <MoviePoster key={r.k} k={r.k} p={{ img: poster(r.k), t: C[r.k].t }} tag={r.badge} plat={C[r.k].plat} onTap={() => demo(C[r.k].t)} />)}</Rail>
       <Rail title="My Rental and Buy" gap={16}>{MOVIE_RENTALS.map(p => <MovieWide key={p.t} p={p} onTap={() => demo(p.t)} />)}</Rail>
 
       {/* Actor: 80px portraits, a heart badge on favorites (tap to toggle) */}
       <div style={{ marginBottom: -8 }}><Rail title="Actor" gap={16} padBottom={8}>
         {ACTORS.map(x => (
           <button key={x.t} onClick={() => toggleFav(x.t)} aria-label={x.t} aria-pressed={favs.has(x.t)} className="relative shrink-0 rounded-full" style={{ width: 80, height: 80 }}>
-            <span className="absolute inset-0 rounded-full overflow-hidden" style={{ background: "#3a3a3a" }}><img src={x.img} alt="" className="w-full h-full object-cover" /></span>
+            <span className="absolute inset-0 rounded-full overflow-hidden" style={{ background: PANEL_SOLID }}><img src={x.img} alt="" className="w-full h-full object-cover" /></span>
             {favs.has(x.t) && <span className="absolute flex items-center justify-center rounded-full bg-white" style={{ left: 52, top: 56, width: 32, height: 32 }}><img src={iconHeartDark} alt="" width={24} height={24} /></span>}
           </button>
         ))}
@@ -1221,18 +1197,19 @@ function MovieRails({ demo, chip, onChip, chipsRef, chipsDocked, onOpenChannel }
 }
 
 // a small rounded badge (Figma "Badge 1"); its padding scales with the text, as in the design
-function Badge({ label, size = 11, bg = "#3a3a3a" }: { label: string; size?: number; bg?: string }) {
-  return <span className="inline-flex items-center justify-center rounded-full whitespace-nowrap" style={{ fontSize: size, fontWeight: 500, lineHeight: 1.17, padding: `0 ${size * 0.545}px`, color: ON_SURFACE, background: bg }}>{label}</span>;
+function Badge({ label, size = 11, bg = TAG_BG }: { label: string; size?: number; bg?: string }) {
+  return <span className="inline-flex items-center justify-center rounded-full whitespace-nowrap" style={{ fontSize: size, fontWeight: 500, lineHeight: 1.17, padding: `0 ${size * 0.545}px`, color: bg === TAG_BG ? TAG_TEXT : "#fff", background: bg }}>{label}</span>;
 }
 
 // a 104 x 156 poster on the Sport tab, with an optional 4K badge at the bottom left
 function SmallPoster({ p, badge, plat, onTap }: { p: SportPoster; badge?: boolean; plat?: string; onTap: () => void }) {
+  const ott = plat ?? ottOf(p.k);
   return (
-    <button onClick={onTap} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 104, height: 156, background: "#3a3a3a" }}>
+    <button onClick={onTap} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 104, height: 156, background: PANEL_SOLID }}>
       <img src={p.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: p.pos ?? "center" }} />
-      {badge && <span className="absolute" style={{ left: 12, bottom: 12 }}><Badge label="4K" size={12.22} /></span>}
-      {plat && <OttTag plat={plat} />}
-      {p.k && <TitleCrown k={p.k} right={badge} />}
+      {badge && <span className="absolute left-2 top-2"><Badge label="4K" size={12.22} /></span>}
+      {ott && <OttTag plat={ott} />}
+      {p.k && <TitleCrown k={p.k} right={!!ott} />}
     </button>
   );
 }
@@ -1252,10 +1229,10 @@ function TopNumeral({ n, top }: { n: number; top: number }) {
 function ClipCard({ c, onTap }: { c: Clip; onTap: () => void }) {
   return (
     <button onClick={onTap} className="flex flex-col gap-1 text-left shrink-0" style={{ width: 200 }}>
-      <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112, background: "#3a3a3a" }}>
+      <div className="relative overflow-hidden rounded-[12px]" style={{ height: 112, background: PANEL_SOLID }}>
         <img src={c.img} alt="" className="w-full h-full object-cover" />
-        {c.live && <span className="absolute left-3 top-3"><LivePill /></span>}
-        {c.d && <span className="absolute right-3 bottom-3 rounded-[14px] px-2" style={{ fontSize: 14, fontWeight: 500, color: "#000", background: "#fff" }}>{c.d}</span>}
+        {c.live && <span className="absolute left-2 top-2"><StatusPill label="LIVE" live /></span>}
+        {c.d && <span className="absolute right-2 bottom-2 rounded-[14px] px-2" style={{ fontSize: 14, fontWeight: 500, color: "#000", background: "#fff" }}>{c.d}</span>}
       </div>
       <span style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.15, color: ON_SURFACE, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.t}</span>
     </button>
@@ -1289,39 +1266,33 @@ function StoreRail({ onOpen }: { onOpen: () => void }) {
 // premium crown at the bottom left
 function PosterCard({ p, onTap }: { p: Poster; onTap: () => void }) {
   return (
-    <button onClick={onTap} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 135, height: 202, background: "#3a3a3a" }}>
+    <button onClick={onTap} aria-label={p.t} className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: 135, height: 202, background: PANEL_SOLID }}>
       <img src={p.img} alt="" className="w-full h-full object-cover" />
-      {p.tag && <span className="absolute whitespace-nowrap rounded-full px-[9px]" style={{ left: 12, top: 12, fontSize: 14, lineHeight: "18px", fontWeight: 500, color: ON_SURFACE, background: "#3a3a3a" }}>{p.tag}</span>}
-      {p.netflix && <img src={imgNetflix} alt="Netflix" className="absolute rounded-full object-cover" style={{ left: 12, bottom: 12, width: 42, height: 21 }} />}
-      {p.k && <TitleCrown k={p.k} right={p.netflix} />}
+      {p.tag && <span className="absolute whitespace-nowrap rounded-full px-[9px]" style={{ left: 8, top: 8, fontSize: 14, lineHeight: "18px", fontWeight: 500, color: TAG_TEXT, background: TAG_BG }}>{p.tag}</span>}
+      {p.k && <TitleCrown k={p.k} right={!!p.plat} />}
       {p.plat && <OttTag plat={p.plat} />}
     </button>
   );
 }
 
-// an OTT app's logo tag, 12px in from a poster's bottom left corner
 // a title's premium crown (rules.js): only until the viewer has it; right: the bottom left corner is taken
 function TitleCrown({ k, right }: { k: string; right?: boolean }) {
   if (!rules().showsCrown({ k })) return null;
-  return <img src={iconCrown} alt="Premium" className="absolute" style={{ ...(right ? { right: 12 } : { left: 12 }), bottom: 12, width: 20, height: 20 }} />;
-}
-
-function OttTag({ plat }: { plat: string }) {
-  return <img src={tag(plat)} alt={plat} className="absolute left-3 bottom-3" style={{ width: 42, height: 28 }} />;
+  return <CrownFrame className="absolute" style={{ ...(right ? { right: 8 } : { left: 8 }), bottom: 8 }}><img src={iconCrown} alt="Premium" width={CROWN_IN_FRAME} height={CROWN_IN_FRAME} /></CrownFrame>;
 }
 
 // Choose what you like: a preview of three topics and the button that opens the interests picker
 function ChooseInterests({ onChoose, onPick }: { onChoose: () => void; onPick: (label: string) => void }) {
   return (
     <section className="px-4">
-      <div className="flex flex-col gap-3 rounded-[12px] px-4 py-5" style={{ background: "#1c1c1c" }}>
+      <div className="flex flex-col gap-3 rounded-[12px] px-4 py-5" style={{ background: GLASS_CARD }}>
         <div>
           <h3 className="m-0" style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.2, letterSpacing: -0.2, color: ON_SURFACE, textShadow: "0 4px 4px rgba(0,0,0,0.4)" }}>Choose what you like</h3>
           <p className="m-0" style={{ fontSize: 12, lineHeight: "16px", letterSpacing: 0.4, color: ON_VARIANT, textShadow: "0 4px 4px rgba(0,0,0,0.4)" }}>Pick 3 or more. Your Home will show rails for the topics you choose.</p>
         </div>
         <div className="flex items-center justify-between">
           {CHOOSE.map(c => (
-            <button key={c.t} onClick={() => onPick(c.t)} className="relative overflow-hidden rounded-[11px] flex items-center justify-center" style={{ width: 95, height: 95, background: "#3a3a3a" }}>
+            <button key={c.t} onClick={() => onPick(c.t)} className="relative overflow-hidden rounded-[11px] flex items-center justify-center" style={{ width: 95, height: 95, background: PANEL_SOLID }}>
               <img src={c.img} alt="" className="absolute max-w-none" style={c.crop} />
               <span className="absolute inset-0" style={{ background: `rgba(0,0,0,${c.dim})` }} />
               <span className="relative whitespace-nowrap" style={{ fontSize: c.fontSize, fontWeight: 500, lineHeight: "18px", color: ON_SURFACE }}>{c.t}</span>
@@ -1336,17 +1307,17 @@ function ChooseInterests({ onChoose, onPick }: { onChoose: () => void; onPick: (
 
 function ChooseButton({ onTap }: { onTap: () => void }) {
   return (
-    <button onClick={onTap} className="relative w-full flex items-center justify-center rounded-[99px] px-3" style={{ height: 32, background: "#f0f0f0", boxShadow: "0 4px 3px rgba(0,0,0,0.1)" }}>
+    <button onClick={onTap} className="relative w-full flex items-center justify-center rounded-[10px] px-3" style={{ height: 32, background: "#f0f0f0", boxShadow: "0 4px 3px rgba(0,0,0,0.1)" }}>
       <span style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.15, color: "#282828" }}>Choose interests</span>
     </button>
   );
 }
 
-// a small status badge (Figma "Mobile / Badge"): red with LIVE, dark for a start time
+// a status tag, the same shape and text as the other card tags: red with LIVE, white for a start time
 function StatusPill({ label, live }: { label: string; live?: boolean }) {
   return (
-    <span className="inline-flex items-center justify-center gap-1 rounded-full px-[6px] whitespace-nowrap" style={{ height: 13, fontSize: 11, fontWeight: 500, color: live ? "#fff" : ON_SURFACE, background: live ? LIVE : "#3a3a3a" }}>
-      <span className="rounded-full bg-white shrink-0" style={{ width: 8, height: 8 }} />{label}
+    <span className="inline-flex items-center justify-center gap-1 rounded-full px-[9px] whitespace-nowrap" style={{ fontSize: 14, lineHeight: "18px", fontWeight: 500, color: live ? "#fff" : TAG_TEXT, background: live ? LIVE : TAG_BG }}>
+      {live && <span className="rounded-full bg-white shrink-0" style={{ width: 6, height: 6 }} />}{label}
     </span>
   );
 }

@@ -46,7 +46,7 @@ export default function TVShareSheet({ ch, onClose, onDone }: { ch: Channel; onC
             <img src={ch.poster} alt="" className="shrink-0 rounded-[12px] object-cover" style={{ width: 120, height: 67.2 }} />
             <div className="flex flex-1 flex-col gap-1 min-w-0" style={{ color: "#e8e8e8" }}>
               <p className="m-0" style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{ch.program}</p>
-              <p className="m-0 truncate" style={{ fontSize: 12, lineHeight: "16px", letterSpacing: 0.4 }}>{ch.name} · {ch.no}</p>
+              <p className="m-0 truncate" style={{ fontSize: 12, lineHeight: "16px", letterSpacing: 0.4 }}>{ch.excl ? ch.name : `${ch.name} · ${ch.no}`}</p>
             </div>
           </div>
         </div>

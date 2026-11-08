@@ -11,10 +11,10 @@ const MobileRules = (self as any).MobileRules;   // rules.js registers itself as
 export const RULES = MobileRules.RULES;
 export const otpRule = MobileRules.otp;
 
-// a channel as the rules see it. n is the channel number: names repeat here (three "Asian Games 2026") and the rules
+// a channel as the rules see it. n is the channel number, which is unique; the rules
 // look channels up by n
 export const ruleChannel = (c: Channel) => ({
-  n: c.no, no: Number(c.no), crown: c.premium ? (c.owned ? "owned" : "gold") : "",
+  n: c.no, no: Number(c.no), excl: c.excl, crown: c.premium ? (c.owned ? "owned" : "gold") : "",
   pkg: c.cats.includes("Sports") ? "sports" : undefined,
   cats: [c.cats.includes("Sports") && "sports", c.cats.includes("Movies & Series") && "movies", c.cats.includes("Digital TV") && "digital"].filter(Boolean),
 });

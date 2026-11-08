@@ -7,7 +7,8 @@ import iconRowChevron from "../assets/profile/chevron.svg";
 import iconLogout from "../assets/profile/logout.svg";
 import { CHANNELS, ChannelLogo, tvStore } from "./TVScreen";
 import { CATALOG, RAILS } from "./catalog";
-import { PAGE_BG, ON_SURFACE, ON_VARIANT, TOP_BAND_FADE } from "./theme";
+import { PAGE_BG, ON_SURFACE, ON_VARIANT, TOP_BAND_FADE, ACCOUNT_CARD, TONAL, PANEL, PANEL_SOLID, GLASS_CARD, CHIP_BORDER } from "./theme";
+import { OttTag } from "./cardTags";
 
 // ─── Profile (Figma "Prototype" file, Profile 230:64169) ────────────────────────────────────────────────────────
 // The Profile tab: scan / support / notifications, the profile card (avatar, name, account, Not Linked, and Link
@@ -17,7 +18,7 @@ import { PAGE_BG, ON_SURFACE, ON_VARIANT, TOP_BAND_FADE } from "./theme";
 const BASE = import.meta.env.BASE_URL;
 const a = (p: string) => `${BASE}${p}`;
 const FONT = "'Open Sans', sans-serif";
-const MY_LIST = RAILS.myList.slice(0, 5).map(x => a(CATALOG[x.k].p ?? CATALOG[x.k].w ?? ""));
+const MY_LIST = RAILS.myList.slice(0, 5).map(x => ({ img: a(CATALOG[x.k].p ?? CATALOG[x.k].w ?? ""), plat: CATALOG[x.k].plat }));
 // Figma repeats one package as a placeholder; the second card shows another of the Store's packages
 const SUBSCRIPTIONS = [
   { img: imgPremium, t: "Play Premium Plus", price: "449 Baht", until: "13 April 2025" },
@@ -45,7 +46,7 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
             <button onClick={() => demo("Support")} aria-label="Support" className={iconBtn}><Headset size={20} color="#fff" /></button>
             <button onClick={() => demo("Notifications")} aria-label="Notifications" className={iconBtn}><Bell size={20} color="#fff" /></button>
           </div>
-          <div className="flex flex-col gap-4 p-4 rounded-[16px]" style={{ background: "#2a2a2a" }}>
+          <div className="flex flex-col gap-4 p-4 rounded-[16px]" style={ACCOUNT_CARD}>
             <div className="flex items-center gap-2">
               <span className="relative shrink-0 rounded-full" style={{ width: 80, height: 80 }}>
                 <img src={imgAvatar} alt="" className="w-full h-full rounded-full object-cover" style={{ background: "#404045" }} />
@@ -57,13 +58,13 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
               <div className="relative flex flex-1 flex-col gap-2 min-w-0">
                 <span className="flex items-center justify-between gap-2">
                   <span className="truncate" style={{ fontSize: 24, fontWeight: 500, color: ON_SURFACE }}>User</span>
-                  <span className="shrink-0 flex items-center rounded-full px-[10px]" style={{ height: 24, fontSize: 11, fontWeight: 700, color: ON_SURFACE, background: "#6a6a6a" }}>Not Linked</span>
+                  <span className="shrink-0 flex items-center rounded-full px-[10px]" style={{ height: 24, fontSize: 11, fontWeight: 700, color: ON_SURFACE, background: TONAL }}>Not Linked</span>
                 </span>
                 <span className="truncate" style={{ fontSize: 14, color: ON_VARIANT }}>Account: 88X XXX XXXX</span>
                 <span className="truncate" style={{ fontSize: 12, color: ON_VARIANT }}>AIS Fibre</span>
               </div>
             </div>
-            <button onClick={() => demo("Link myAIS")} className="w-full flex items-center justify-center rounded-[10px] px-[14px]" style={{ height: 40, background: "#4a4a4a", boxShadow: "0 4px 4px rgba(0,0,0,0.2)" }}>
+            <button onClick={() => demo("Link myAIS")} className="w-full flex items-center justify-center rounded-[10px] px-[14px]" style={{ height: 40, background: TONAL, boxShadow: "0 4px 4px rgba(0,0,0,0.2)" }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0" }}>Link myAIS to Switch Account</span>
             </button>
           </div>
@@ -80,10 +81,10 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
           </div>
           <div className="profile-rail flex gap-2 overflow-x-auto px-4">
             {SUBSCRIPTIONS.map(s => (
-              <div key={s.t} className="shrink-0 flex flex-col gap-1 overflow-hidden rounded-[16px] pt-1" style={{ width: 289, background: "#626262" }}>
-                <span className="text-center" style={{ fontSize: 12, lineHeight: "16px", letterSpacing: 0.4, color: "#f2f5fa" }}>Bundle Package</span>
+              <div key={s.t} className="shrink-0 flex flex-col gap-1 overflow-hidden rounded-[16px] pt-1" style={{ width: 289, background: "rgba(255,255,255,0.12)" }}>
+                <span className="text-center" style={{ fontSize: 12, lineHeight: "16px", letterSpacing: 0.4, color: ON_SURFACE }}>Bundle Package</span>
                 <div>
-                  <div className="flex items-start gap-2 p-3 rounded-t-[16px]" style={{ background: "#3a3a3a" }}>
+                  <div className="flex items-start gap-2 p-3 rounded-t-[16px]" style={{ background: PANEL }}>
                     <img src={s.img} alt="" className="rounded-[8px] object-cover shrink-0" style={{ width: 48, height: 48 }} />
                     <span className="flex flex-1 flex-col justify-center gap-[2px] min-w-0 self-stretch">
                       <span className="truncate" style={{ fontSize: 16, fontWeight: 500, lineHeight: "24px", color: ON_SURFACE }}>{s.t}</span>
@@ -91,7 +92,7 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
                     </span>
                     <span className="flex items-center rounded-[4px] px-2 shrink-0" style={{ height: 20, fontSize: 10, fontWeight: 500, letterSpacing: 0.5, color: "#101010", background: "#9edb07" }}>Active</span>
                   </div>
-                  <div className="flex items-baseline justify-between px-3 py-2 rounded-b-[12px]" style={{ background: "#292929", fontSize: 12, lineHeight: "16px", letterSpacing: 0.4, color: ON_VARIANT }}>
+                  <div className="flex items-baseline justify-between px-3 py-2 rounded-b-[12px]" style={{ background: PANEL_SOLID, fontSize: 12, lineHeight: "16px", letterSpacing: 0.4, color: ON_VARIANT }}>
                     <span>Available until</span>
                     <span className="flex gap-2"><span>{s.until}</span>{s.time && <span>{s.time}</span>}</span>
                   </div>
@@ -104,9 +105,9 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
 
         {/* settings list */}
         <section className="px-4">
-          <div className="flex flex-col px-4 rounded-[16px]" style={{ background: "#2a2a2a" }}>
+          <div className="flex flex-col px-4 rounded-[16px]" style={{ background: GLASS_CARD }}>
             {SETTINGS.map((t, i) => (
-              <button key={t} onClick={() => demo(t)} className="flex items-center gap-2 text-left w-full" style={{ height: 52, borderBottom: i < SETTINGS.length - 1 ? "1px solid #5a5a5a" : "none" }}>
+              <button key={t} onClick={() => demo(t)} className="flex items-center gap-2 text-left w-full" style={{ height: 52, borderBottom: i < SETTINGS.length - 1 ? `1px solid ${CHIP_BORDER}` : "none" }}>
                 <span className="flex-1 min-w-0" style={{ fontSize: 14, fontWeight: 500, lineHeight: "20px", letterSpacing: 0.1, color: ON_SURFACE }}>{t}</span>
                 <img src={iconRowChevron} alt="" className="shrink-0" />
               </button>
@@ -118,9 +119,10 @@ export default function ProfilePage({ topInset, bottom, onOpenChannel, onOpenSto
         <section className="flex flex-col gap-2">
           <div className="px-4"><SectionTitle title="My List" onMore={() => demo("My List")} /></div>
           <div className="profile-rail flex gap-2 overflow-x-auto px-4">
-            {MY_LIST.map(img => (
-              <button key={img} onClick={() => demo("My List")} className="shrink-0 overflow-hidden rounded-[8px]" style={{ width: 104, height: 156 }}>
+            {MY_LIST.map(({ img, plat }) => (
+              <button key={img} onClick={() => demo("My List")} className="relative shrink-0 overflow-hidden rounded-[8px]" style={{ width: 104, height: 156 }}>
                 <img src={img} alt="" className="w-full h-full object-cover" />
+                {plat && <OttTag plat={plat} />}
               </button>
             ))}
             <span className="shrink-0" style={{ width: 8 }} />

@@ -33,7 +33,7 @@ import CvvSheet from "./CvvSheet";
 import OtpPage from "./OtpPage";
 import QrSheet from "./QrSheet";
 import PurchaseDonePage from "./PurchaseDonePage";
-import { PAGE_BG, ON_SURFACE, ON_VARIANT, PANEL, OUTLINE, headerGlass } from "./theme";
+import { PAGE_BG, ON_SURFACE, ON_VARIANT, PANEL, OUTLINE, CHIP_BORDER, headerGlass } from "./theme";
 import { recordPurchase } from "./mobileRules";
 
 // ─── Package Details (Figma "Store" file, AIS PLAY: store_packageDetails 4425:145449) ───────────────────────────────
@@ -190,8 +190,8 @@ export default function PackageDetailsPage({ p, topInset, bottomInset = "0px", o
                 <div className="flex items-center gap-[6px] p-1">
                   {plans.map((x, k) => (
                     <button key={x.per} onClick={() => choose(k)} aria-label={`${x.per} plan`} className="relative rounded-full transition-all duration-300"
-                      style={{ height: 8, width: k === pick ? 24 : 8, background: "#666" }}>
-                      {k === pick && <span className="absolute left-0 top-0 rounded-full" style={{ width: 8, height: 8, background: "#e6e6e6" }} />}
+                      style={{ height: 8, width: k === pick ? 24 : 8, background: "rgba(255,255,255,0.35)" }}>
+                      {k === pick && <span className="absolute left-0 top-0 rounded-full" style={{ width: 8, height: 8, background: ON_SURFACE }} />}
                     </button>
                   ))}
                 </div>
@@ -211,7 +211,7 @@ export default function PackageDetailsPage({ p, topInset, bottomInset = "0px", o
                     <span className="truncate" style={{ ...label, letterSpacing: 0.1 }}>{s.name}</span>
                     <div className="flex items-center gap-2" style={{ height: 21 }}>
                       <span className="whitespace-nowrap" style={{ ...small, color: ON_VARIANT }}>{s.screens} screen{s.screens > 1 ? "s" : ""}</span>
-                      <span className="flex items-center rounded-[11px] px-[6px]" style={{ fontSize: 11, fontWeight: 500, color: ON_SURFACE, border: "1px solid #5a5a5a" }}>{s.hd ? "HD" : "4K"}</span>
+                      <span className="flex items-center rounded-[11px] px-[6px]" style={{ fontSize: 11, fontWeight: 500, color: ON_SURFACE, border: `1px solid ${CHIP_BORDER}` }}>{s.hd ? "HD" : "4K"}</span>
                       {!s.hd && <img src={icDolby} alt="Dolby Atmos" width={40} height={40} />}
                     </div>
                   </div>

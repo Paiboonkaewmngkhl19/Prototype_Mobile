@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, CircleHelp, Headset, Phone, Globe } from "lucide-react";
 import imgHero from "../assets/home/store-banner.jpg";
-import imgSportCard from "../assets/store/sport-card.jpg";
-import imgSoundbar from "../assets/store/soundbar.jpg";
-import imgCloud from "../assets/store/cloud.jpg";
 import logoNetflix from "../assets/store/logo-netflix.png";
 import logoHbo from "../assets/store/logo-hbo.png";
 import logoHotstar from "../assets/store/logo-hotstar.png";
@@ -13,8 +10,11 @@ import lgPl from "../assets/sport/lg-pl.png";
 import lgUcl from "../assets/sport/lg-ucl.png";
 import lgRws from "../assets/sport/lg-rws.png";
 import type { Kind } from "./PackagesPage";
-import { PAGE_BG, BG, ON_SURFACE, ON_VARIANT, CHIP_BG, CHIP_BORDER, PILL, PILL_RING, GLASS_CARD, PANEL, OUTLINE } from "./theme";
-import { SHORT_DRAMAS } from "./catalog";
+import { PAGE_BG, BG, ON_SURFACE, ON_VARIANT, CHIP_BG, CHIP_BORDER, PILL, PILL_RING, GLASS_CARD, PANEL, OUTLINE, PANEL_SOLID, TAG_BG, TAG_TEXT } from "./theme";
+import { CATALOG as C, SHORT_DRAMAS, RENT_LIST } from "./catalog";
+import { OTT, PKG, type StorePkg } from "./storeData";
+import { rules } from "./mobileRules";
+import { OttTag } from "./cardTags";
 
 // ─── Store (Figma "Store" file, Mobile / Content modal 5222:66002) ────────────────────────────────────────────────
 // Opened from the Store rail on For you and Sports: a package hero (title, badges, Subscribe, VAT), package rails with
@@ -27,65 +27,97 @@ const FONT = "'Open Sans', sans-serif";
 // cards in the app theme: the TV prototype's glass card
 const CARD = GLASS_CARD;
 
-// the short-drama posters: ReelShort, DramaBox, ReelShort and ShortMax, in the order of the Shorts packages
-const drama = (i: number) => a(`posters/shorts/${SHORT_DRAMAS[i].img}`);
-type Pkg = { img: string; price: string; t: string };
-const pkgs = (imgs: string[], price = "199 baht / Month", titles?: string[]): Pkg[] =>
-  imgs.map((img, k) => ({ img, price, t: titles?.[k] ?? "Package Title" }));
+// the Shorts cards keep their short-drama posters: the app's own, in turn
+const dramaOf = (plat: string, i: number) => { const own = SHORT_DRAMAS.filter(s => s.plat === plat); return a(`posters/shorts/${own[i % own.length].img}`); };
+const shortCard = (p: StorePkg, i: number, badge?: string): Pkg => ({ ...cardOf(p, badge), ott: undefined, plat: p.ott, img: dramaOf(p.ott, i) });
+// a card: its own art, or an OTT app / league (ott: its logo on its colours); badge: top left, the rail's first card
+type Pkg = { img?: string; price: string; t: string; ott?: string; plat?: string; badge?: string };
+const art = (f: string) => a(`posters/store/${f}`);
+const num = (n: number) => n.toLocaleString("en-US");
+const vat = (n: number) => (Math.round(n * 107) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 });
+const cardOf = (p: StorePkg, badge?: string): Pkg => ({ t: p.t, price: `${num(p.price)} baht / ${p.card}`, ott: p.ott, badge });
+const allPkgs = () => Object.values(PKG).flat();
+// packages matching a test, cheapest first; the first carries the rail's badge
+const pick = (test: (p: StorePkg) => boolean, badge?: string) => allPkgs().filter(test).sort((x, y) => x.price - y.price).map((p, i) => cardOf(p, i ? undefined : badge));
 
+
+const PLAY_ALL = { img: art("foryou-play-all.webp"), t: "PLAY ALL", price: 1999, per: "Year" };
 const HERO = [
-  { img: imgHero, t: "PLAY Ultimate", price: 199, vat: "212.93", tags: ["Monthly", "Recurring", "Recommended"] },
-  { img: imgSportCard, t: "MONOMAX Sports", price: 299, vat: "319.93", tags: ["Monthly", "Recurring"] },
-  { img: a("posters_portrait/House.jpg"), t: "HBO Max", price: 159, vat: "170.13", tags: ["Monthly", "New"] },
+  { img: art("foryou-play-ultimate.webp"), t: "PLAY ULTIMATE", price: 999, per: "Month", tags: ["Monthly", "Recurring", "Recommended"] },
+  { ...PLAY_ALL, tags: ["Annual", "Recurring", "Best Seller"] },
+  { img: art("foryou-supergirl.webp"), t: "PLAY PREMIUM PLUS Monthly", price: 299, per: "Month", tags: ["Monthly", "Recurring", "New Release"] },
 ];
 
 // the rails whose title opens a package list (Great Value has none)
 const isKind = (t: string): t is Kind => t === "Sports" || t === "Movies" || t === "Shorts";
 
-export type Chip = { label: string; logo?: string; text?: string };
-export const RAILS: { title: string; chips: Chip[]; cards: Pkg[] }[] = [
+export type Chip = { label: string; logo?: string; text?: string; contain?: boolean };
+const lg = (k: string): Chip => ({ label: OTT[k].n, logo: a(OTT[k].logo!), contain: true });
+const asian = ["iqiyi", "viu", "monomax", "disney", "reelshort", "dramabox", "shortmax"], isLeague = (p: StorePkg) => OTT[p.ott].kind === "league";
+const leagues = ["epl", "ucl", "nba", "thai1", "rws", "bundesliga", "motogp", "pga"], tagged = (k: string): Chip => ({ label: OTT[k].n, logo: a(`badges/tag-${k}.png`) });
+// tabs: the chips on this page, and tabCards what each shows (the TV Store's); chips: the filters of the package list page
+export const RAILS: { title: string; chips: Chip[]; tabs: Chip[]; tabCards: Record<string, Pkg[]> }[] = [
   {
     title: "Sports",
     chips: [{ label: "Popular" }, { label: "Football", logo: lgUcl }, { label: "NBA", text: "NBA" }, { label: "Premier League", logo: lgPl }, { label: "RWS", logo: lgRws }],
-    cards: pkgs([imgSportCard, a("posters/upcoming/live.jpg"), a("posters/arsenal.jpg"), a("posters/upcoming/u3.jpg")], "199 baht / Month",
-      ["MONOMAX Sports", "Premier League Pass", "Football Plus", "Bundesliga Pass"]),
+    tabs: [{ label: "Popular" }, ...leagues.map(lg)],
+    tabCards: {
+      Popular: [{ img: PLAY_ALL.img, t: PLAY_ALL.t, price: `${num(PLAY_ALL.price)} baht / ${PLAY_ALL.per}`, badge: "Recommended" }, ...leagues.map(k => cardOf(PKG[k][0]))],
+      ...Object.fromEntries(leagues.map(k => [OTT[k].n, PKG[k].map((p, i) => cardOf(p, i ? undefined : p.badge))])),
+    },
   },
   {
     title: "Movies",
     chips: [{ label: "Popular" }, { label: "Netflix", logo: logoNetflix }, { label: "HBO Max", logo: logoHbo }, { label: "Disney+ Hotstar", logo: logoHotstar }, { label: "Viu", logo: logoViu }, { label: "iQIYI", logo: logoIqiyi }],
-    cards: pkgs([a("posters_portrait/John.jpg"), a("posters_portrait/House.jpg"), a("posters_portrait/avatar.jpg"), a("posters_portrait/F1.jpg")], "199 baht / Month",
-      ["Netflix Standard", "HBO Max", "Disney+ Hotstar", "Prime Video"]),
+    tabs: [{ label: "Popular" }, ...["netflix", "hbo", "disney", "viu", "monomax"].map(tagged), { label: "iQIYI", logo: logoIqiyi }],
+    tabCards: {
+      Popular: [cardOf(PKG.netflix[0], "Recommended"), ...[PKG.disney[0], PKG.hbo[0], PKG.prime[0], PKG.viu[0], PKG.iqiyi[0], PKG.netflix[1], PKG.monomax[0]].map(p => cardOf(p))],
+      ...Object.fromEntries(["netflix", "hbo", "disney", "iqiyi", "viu", "monomax"].map(k => [OTT[k].n, PKG[k].map((p, i) => cardOf(p, i ? undefined : p.badge))])),
+    },
   },
   {
     title: "Shorts",
     chips: [{ label: "Popular" }, { label: "ReelShort", text: "RS" }, { label: "DramaBox", text: "DB" }],
-    cards: pkgs([drama(0), drama(1), drama(5), drama(7)], "59 baht / Month",
-      ["ReelShort VIP", "DramaBox", "Shorts Plus", "Clips Unlimited"]),
+    tabs: [{ label: "Popular" }, ...["reelshort", "dramabox", "shortmax"].map(tagged)],
+    tabCards: {
+      Popular: ["reelshort", "dramabox", "shortmax"].flatMap(k => PKG[k].slice(0, 2).map((p, i) => ({ p, i }))).sort((x, y) => x.i - y.i).map(({ p, i }, n) => shortCard(p, i, n ? undefined : "Recommended")),
+      ...Object.fromEntries(["reelshort", "dramabox", "shortmax"].map(k => [OTT[k].n, PKG[k].map((p, i) => shortCard(p, i, i ? undefined : p.badge))])),
+    },
   },
   {
     title: "Great Value",
     chips: [{ label: "< 100 baht Enjoy" }, { label: "< 100 baht Sports" }, { label: "300 baht+" }],
-    cards: [
-      { img: a("posters_portrait/debt.jpg"), price: "99 baht / Month", t: "Thai Series Pack" },
-      { img: a("posters_portrait/ex5.jpg"), price: "999 baht / Month", t: "PLAY All Yearly" },
-      { img: a("posters_portrait/ex2.jpg"), price: "79 baht / Month", t: "Concert Pass" },
-      { img: a("posters_portrait/topgun_m.jpg"), price: "399 baht / Month", t: "Movie Max" },
-    ],
+    tabs: [{ label: "< 100 baht Enjoy" }, { label: "< 100 baht Sports" }, { label: "300 - 500 baht" }, { label: "Asian Games" }],
+    tabCards: {
+      "< 100 baht Enjoy": pick(p => p.price < 100 && asian.includes(p.ott), "Best Saver"),
+      "< 100 baht Sports": pick(p => p.price < 100 && isLeague(p), "Best Saver"),
+      "300 - 500 baht": pick(p => p.price >= 300 && p.price <= 500, "Recommended"),
+      "Asian Games": [{ img: PLAY_ALL.img, t: PLAY_ALL.t, price: `${num(PLAY_ALL.price)} baht / ${PLAY_ALL.per}`, badge: "Recommended" }, ...pick(p => isLeague(p) && p.card === "Month")],
+    },
   },
 ];
-const PPV = [
-  { img: a("posters_portrait/ex3.jpg"), price: "199 baht", t: "Man City vs Arsenal", when: "Oct 23, 2026 | 20:00 – 22:15" },
-  { img: a("posters_portrait/ex2.jpg"), price: "299 baht", t: "BOSSCK Dream Concert", when: "Oct 30, 2026 | 19:00 – 22:00" },
-  { img: a("posters_portrait/ex1.jpg"), price: "149 baht", t: "The Sophomore D-Day", when: "Nov 1, 2026 | 18:00 – 21:00" },
+// PPV Event: AIS PLAY's own events; the first shows its picture without printed text, so the details read clearly
+const PPV: { k: string; img: string; badge: string; pos?: string }[] = [
+  { k: "assanee", img: a(C.assanee.w ?? ""), badge: "New Arrival" },
+  { k: "missuni", img: a(C.missuni.p ?? ""), badge: "#1 in Thailand", pos: "90% center" },
+  { k: "sophomores", img: a(C.sophomores.p ?? ""), badge: "Rerun" },
+  { k: "bossckm", img: a(C.bossckm.p ?? ""), badge: "New Arrival" },
 ];
-const HIGHLIGHT = pkgs([a("posters_portrait/ex4.jpg"), a("posters_portrait/lotr/r5.jpg"), a("posters_portrait/Venom.jpg")], "99 baht / Month", ["Matchday Live", "Fantasy Pack", "Action Pack"]);
-const RENT = [a("posters_portrait/John.jpg"), a("posters_portrait/Venom.jpg"), a("posters_portrait/avatar.jpg"), a("posters_portrait/F1.jpg")];
-const BUY = [a("posters_portrait/topgun_m.jpg"), a("posters_portrait/lotr/r1.jpg"), a("posters_portrait/legal/l1.jpg"), a("posters_portrait/House.jpg")];
-const ONE_TIME = pkgs([a("posters_portrait/ex5.jpg"), a("posters_portrait/debt.jpg"), a("posters_portrait/ex1.jpg")], "199 baht / 7 Days", ["Weekly Pass", "Series Binge", "Concert Week"]);
-const OTHERS = [{ img: imgSoundbar, t: "Smart Soundbar", pos: "12% center" }, { img: imgCloud, t: "AIS Cloud PC", pos: "25% center" }];
+const HIGHLIGHT: Pkg[] = ([["play-inter", "PLAY INTER", 199], ["play-disney", "PLAY Disney+", 289], ["play-premium", "PLAY PREMIUM", 199], ["play-family", "PLAY FAMILY", 249], ["play-shortmax", "PLAY ShortMax", 99], ["good-tv", "Good TV", 59]] as const)
+  .map(([f, t, p]) => ({ img: art(`highlight-${f}.webp`), t, price: `${p} baht / Month` }));
+// Rentals and Buy: the titles sold on their own, by whether they can be rented or bought
+const SOLD = [...RENT_LIST.map(r => r.k), "superman", "debt", "medium", "khemjira"];
+const titleSquare = (k: string) => ({ k, plat: C[k].plat, img: a(C[k].p ?? C[k].w ?? ""), t: C[k].t, pos: k === "superman" ? "87% center" : undefined });
+const RENT = SOLD.filter(k => (C[k].rent ?? 0) > 0).map(titleSquare);
+const BUY = SOLD.filter(k => (C[k].buy ?? 0) > 0).map(titleSquare);
+// One Time: every 7-day pass, charged once, Netflix's first
+const ONE_TIME: Pkg[] = [cardOf(PKG.netflix[0]), ...pick(p => p.card === "7 Days" && p !== PKG.netflix[0])];
+const OTHERS = ([["5g-max-experience", "AIS 5G MAX Experience", "599 baht / Month"], ["the-one-sim", "The One SIM", "50 baht / SIM"], ["5g-tiktok-shop", "AIS 5G TikTok Shop", "749 baht / Month"], ["5g-seller", "AIS 5G Seller", "699 baht / Month"], ["fam-save", "Fam Save", "299 baht / Month"], ["zeed-movie-lover", "AIS ZEED Movie Lover", "199 baht / Month"]] as const)
+  .map(([f, t, price]) => ({ img: art(`others-${f}.webp`), t, price }));
+const BANNERS = [{ t: "Smart Soundbar", img: art("banner-soundbar.png") }, { t: "AIS 3BB Fibre3: Refer a Friend", img: art("banner-fibre3-refer.webp"), pos: "center 85%" }, { t: "Home FibreLAN Plus", img: art("banner-fibrelan-plus.webp") }];
 const SUBS = [
-  { t: "Play Premium Plus", renews: "Renews December 31", img: imgHero },
-  { t: "Play For you", renews: "Renews October 29", img: imgSportCard },
+  { t: "PLAY PREMIUM PLUS Monthly", renews: "Renews December 31", img: art("foryou-supergirl.webp") },
+  { t: "PLAY ULTIMATE", renews: "Renews October 29", img: art("foryou-play-ultimate.webp") },
 ];
 const FAQS = [
   { q: "How do I activate my package?", a: "After subscribing, your package is active right away on every device signed in to your AIS PLAY account. Open any channel or title in the package to start watching." },
@@ -119,9 +151,9 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
       </div>
 
       <div className="absolute inset-0 overflow-y-auto overflow-x-hidden store-scroll" onScroll={e => setScrolled(e.currentTarget.scrollTop > 0)}>
-        {/* hero: the package art, fading into the page, with its title, badges, Subscribe and VAT */}
+        {/* hero: the package art, fading into the page above the logo printed at its foot, with its title, badges, Subscribe and VAT */}
         <section className="relative" style={{ height: 657 }}>
-          <div className="absolute inset-0 overflow-hidden" style={{ WebkitMaskImage: "linear-gradient(to bottom, #000 55%, transparent 100%)", maskImage: "linear-gradient(to bottom, #000 55%, transparent 100%)" }}>
+          <div className="absolute inset-0 overflow-hidden" style={{ WebkitMaskImage: "linear-gradient(to bottom, #000 40%, transparent 76%)", maskImage: "linear-gradient(to bottom, #000 40%, transparent 76%)" }}>
             {HERO.map((s, k) => (
               <img key={k} src={s.img} alt="" className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500" style={{ opacity: k === slide ? 1 : 0, objectPosition: "center top" }} />
             ))}
@@ -135,10 +167,10 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
               </div>
             </div>
             <div className="flex flex-col items-center gap-2 w-full">
-              <button onClick={() => demo(`Subscribe ${h.t}`)} className="w-full rounded-full flex items-center justify-center" style={{ minHeight: 48, background: "#f0f0f0", boxShadow: "0 4px 4px rgba(0,0,0,0.2)" }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: "#282828" }}>Subscribe {h.price} baht /Month</span>
+              <button onClick={() => demo(`Subscribe ${h.t}`)} className="w-full rounded-[10px] flex items-center justify-center" style={{ minHeight: 48, background: "#f0f0f0", boxShadow: "0 4px 4px rgba(0,0,0,0.2)" }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#282828" }}>Subscribe {num(h.price)} baht /{h.per}</span>
               </button>
-              <span style={{ fontSize: 14, fontWeight: 500, color: ON_SURFACE }}>(VAT Included: {h.vat} baht)</span>
+              <span style={{ fontSize: 14, fontWeight: 500, color: ON_SURFACE }}>(VAT Included: {vat(h.price)} baht)</span>
             </div>
             <div className="flex items-center gap-[6px] p-1">
               {HERO.map((_, k) => (
@@ -154,51 +186,46 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
 
           {/* PPV Event: 250 x 375 posters with the price, title, Premium and the date */}
           <Rail title="PPV Event">
-            {PPV.map(p => (
-              <button key={p.t} onClick={() => demo(p.t)} className="relative shrink-0 overflow-hidden rounded-[24px] text-left" style={{ width: 250, height: 375 }}>
-                <img src={p.img} alt="" className="w-full h-full object-cover" />
+            {PPV.map(p => { const m = C[p.k], price = rules().price(p.k); return (
+              <button key={p.k} onClick={() => demo(m.t)} className="relative shrink-0 overflow-hidden rounded-[24px] text-left" style={{ width: 250, height: 375 }}>
+                <img src={p.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: p.pos ?? "center" }} />
                 <span className="absolute inset-x-0 bottom-0" style={{ height: 200, background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.85))" }} />
+                <CardBadge label={p.badge} />
                 <span className="absolute left-4 right-4 bottom-6 flex flex-col items-start gap-1">
-                  <span style={{ fontSize: 18, fontWeight: 500, color: ON_SURFACE }}>{p.price}</span>
-                  <span className="truncate w-full" style={{ fontSize: 13, fontWeight: 600, color: ON_SURFACE }}>{p.t}</span>
-                  <span className="rounded-full px-2 mt-1" style={{ fontSize: 12, fontWeight: 600, color: "#fff", background: PILL, boxShadow: PILL_RING }}>Premium</span>
-                  <span className="rounded-full px-2" style={{ fontSize: 12, color: ON_SURFACE, border: "1px solid rgba(255,255,255,0.4)", background: "rgba(0,0,0,0.3)" }}>{p.when}</span>
+                  <span style={{ fontSize: 18, fontWeight: 500, color: ON_SURFACE }}>{price} baht</span>
+                  <span className="truncate w-full" style={{ fontSize: 13, fontWeight: 600, color: ON_SURFACE }}>{m.t}</span>
+                  <span className="flex items-center gap-2 mt-1">
+                    {rules().showsCrown({ k: p.k }) && <span className="rounded-full px-2" style={{ fontSize: 12, fontWeight: 600, color: TAG_TEXT, background: TAG_BG }}>Premium</span>}
+                    {m.plat && <OttTag inline plat={m.plat} />}
+                  </span>
                 </span>
               </button>
-            ))}
+            ); })}
           </Rail>
 
           {/* Highlight: over a picture that fades into the page */}
           <section className="relative flex flex-col gap-4 py-6">
-            <img src={imgSoundbar} alt="" className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            <img src={art("hero-play-inter.webp")} alt="" className="absolute inset-0 w-full h-full object-cover pointer-events-none"
               style={{ opacity: 0.55, WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%)", maskImage: "linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%)" }} />
             <h3 className="relative m-0 px-4" style={{ fontSize: 18, fontWeight: 400, lineHeight: "24px", color: ON_SURFACE }}>Highlight</h3>
             <div className="relative store-rail flex gap-3 overflow-x-auto px-4">{HIGHLIGHT.map(p => <PackageCard key={p.t} p={p} onTap={() => demo(p.t)} />)}<Pad /></div>
           </section>
 
-          <Rail title="Rentals" more onMore={() => demo("Rentals")}>{RENT.map(img => <Square key={img} img={img} onTap={() => demo("Rent")} />)}</Rail>
-          <Rail title="Buy" more onMore={() => demo("Buy")}>{BUY.map(img => <Square key={img} img={img} onTap={() => demo("Buy")} />)}</Rail>
+          <Rail title="Rentals" more onMore={() => demo("Rentals")}>{RENT.map(s => <Square key={s.k} img={s.img} pos={s.pos} plat={s.plat} label={s.t} onTap={() => demo(`Rent ${s.t}`)} />)}</Rail>
+          <Rail title="Buy" more onMore={() => demo("Buy")}>{BUY.map(s => <Square key={s.k} img={s.img} pos={s.pos} plat={s.plat} label={s.t} onTap={() => demo(`Buy ${s.t}`)} />)}</Rail>
           <Rail title="One Time">{ONE_TIME.map(p => <PackageCard key={p.t} p={p} onTap={() => demo(p.t)} />)}</Rail>
 
           {/* Others: devices and services, price only */}
           <Rail title="Others">
             {OTHERS.map(o => (
               <button key={o.t} onClick={() => demo(o.t)} className="shrink-0 flex flex-col gap-2 overflow-hidden rounded-[8px] text-left" style={{ width: 200, height: 228, background: CARD }}>
-                <img src={o.img} alt={o.t} className="w-full object-cover rounded-[11px]" style={{ height: 198, objectPosition: o.pos }} />
-                <span className="px-1" style={{ fontSize: 18, fontWeight: 500, color: ON_SURFACE }}>199 baht</span>
+                <img src={o.img} alt={o.t} className="w-full object-cover rounded-[11px]" style={{ height: 198 }} />
+                <span className="px-1 truncate" style={{ fontSize: 18, fontWeight: 500, color: ON_SURFACE }}>{o.price}</span>
               </button>
             ))}
           </Rail>
 
-          {/* banner */}
-          <div className="px-4">
-            <button onClick={() => demo("Smart Soundbar")} className="relative w-full overflow-hidden rounded-[12px]" style={{ height: 120 }}>
-              <img src={imgSoundbar} alt="Smart Soundbar" className="w-full h-full object-cover" />
-              <span className="absolute left-1/2 -translate-x-1/2 bottom-2 flex items-center gap-1">
-                {[0, 1, 2, 3, 4].map(k => <span key={k} className="rounded-full" style={{ height: 6, width: k === 0 ? 14 : 6, background: k === 0 ? ON_SURFACE : ON_VARIANT }} />)}
-              </span>
-            </button>
-          </div>
+          <BannerCarousel onTap={demo} />
 
           {/* My Subscription */}
           <section className="flex flex-col gap-4">
@@ -240,7 +267,7 @@ export default function StorePage({ topInset, bottom, bottomInset = "0px", fullS
             </div>
             <div className="flex flex-col gap-2">
               <IconTitle icon={<Globe size={20} color={ON_SURFACE} />}><span style={{ fontSize: 18, color: ON_SURFACE }}>myAIS Website</span></IconTitle>
-              <button onClick={() => demo("myAIS website")} className="w-full rounded-full" style={{ minHeight: 48, background: "#f0f0f0", fontSize: 16, fontWeight: 700, color: "#282828" }}>Access support through the website</button>
+              <button onClick={() => demo("myAIS website")} className="w-full rounded-[10px]" style={{ minHeight: 48, background: "#f0f0f0", fontSize: 16, fontWeight: 700, color: "#282828" }}>Access support through the website</button>
             </div>
           </section>
         </div>
@@ -274,34 +301,73 @@ function Rail({ title, more, onMore, children }: { title: string; more?: boolean
 }
 
 // a package: 200px wide, 1:1 picture, the price and the package name
+// a card's badge, 8px in from its top left corner
+function CardBadge({ label }: { label?: string }) {
+  if (!label) return null;
+  return <span className="absolute left-2 top-2 rounded-full px-2 whitespace-nowrap" style={{ fontSize: 12, fontWeight: 500, lineHeight: "18px", color: TAG_TEXT, background: TAG_BG }}>{label}</span>;
+}
+
+// an OTT app's or league's card art: its logo on its own colours
+function BrandArt({ k }: { k: string }) {
+  const b = OTT[k];
+  const logo = !b.logo ? null : b.kind === "league"
+    ? <span className="relative block overflow-hidden rounded-full bg-white" style={{ width: 96, height: 96 }}>
+        <img src={a(b.logo)} alt={b.n} className={b.box ? "absolute max-w-none" : "w-full h-full"} style={b.box ? { left: `${b.box[0]}%`, top: `${b.box[1]}%`, width: `${b.box[2]}%`, height: `${b.box[3]}%`, objectFit: "contain" } : { objectFit: b.fit, padding: b.fit === "contain" ? 10 : 0 }} />
+      </span>
+    : <img src={a(b.logo)} alt={b.n} className={b.kind === "wide" ? "object-contain" : "object-cover rounded-[16px]"} style={b.kind === "wide" ? { width: 124, height: 72 } : { width: 84, height: 84 }} />;
+  return <span className="flex items-center justify-center w-full rounded-[11px] shrink-0" style={{ height: 198, background: b.bg }}>{logo}</span>;
+}
+
 function PackageCard({ p, onTap }: { p: Pkg; onTap: () => void }) {
   return (
-    <button onClick={onTap} className="shrink-0 flex flex-col gap-2 overflow-hidden rounded-[8px] text-left" style={{ width: 200, height: 253, background: CARD }}>
-      <img src={p.img} alt="" className="w-full object-cover rounded-[11px]" style={{ height: 198 }} />
+    <button onClick={onTap} className="relative shrink-0 flex flex-col gap-2 overflow-hidden rounded-[8px] text-left" style={{ width: 200, height: 253, background: CARD }}>
+      {p.ott ? <BrandArt k={p.ott} /> : <span className="relative block w-full shrink-0" style={{ height: 198 }}><img src={p.img} alt="" className="w-full h-full object-cover rounded-[11px]" />{p.plat && <OttTag plat={p.plat} />}</span>}
+      <CardBadge label={p.badge} />
       <span className="px-1 truncate" style={{ fontSize: 18, fontWeight: 500, lineHeight: "22px", color: ON_SURFACE }}>{p.price}</span>
       <span className="px-1 truncate" style={{ fontSize: 14.5, lineHeight: "17px", color: ON_VARIANT, marginTop: -4 }}>{p.t}</span>
     </button>
   );
 }
-function Square({ img, onTap }: { img: string; onTap: () => void }) {
+
+// the promotions: swipe between them; the dots follow
+function BannerCarousel({ onTap }: { onTap: (label: string) => void }) {
+  const [at, setAt] = useState(0);
   return (
-    <button onClick={onTap} className="shrink-0 overflow-hidden rounded-[8px]" style={{ width: 200, height: 200, background: CARD }}>
-      <img src={img} alt="" className="w-full h-full object-cover" />
+    <div className="relative px-4">
+      <div className="store-rail flex overflow-x-auto rounded-[12px]" style={{ scrollSnapType: "x mandatory" }}
+        onScroll={e => { const el = e.currentTarget; setAt(Math.round(el.scrollLeft / el.clientWidth)); }}>
+        {BANNERS.map(b => (
+          <button key={b.t} onClick={() => onTap(b.t)} aria-label={b.t} className="shrink-0 w-full overflow-hidden" style={{ height: 120, scrollSnapAlign: "start" }}>
+            <img src={b.img} alt="" className="w-full h-full object-cover" style={{ objectPosition: b.pos }} />
+          </button>
+        ))}
+      </div>
+      <span className="absolute left-1/2 -translate-x-1/2 bottom-2 flex items-center gap-1 pointer-events-none">
+        {BANNERS.map((b, k) => <span key={b.t} className="rounded-full transition-all duration-300" style={{ height: 6, width: k === at ? 14 : 6, background: k === at ? ON_SURFACE : ON_VARIANT }} />)}
+      </span>
+    </div>
+  );
+}
+function Square({ img, pos, plat, label, onTap }: { img: string; pos?: string; plat?: string; label?: string; onTap: () => void }) {
+  return (
+    <button onClick={onTap} aria-label={label} className="relative shrink-0 overflow-hidden rounded-[8px]" style={{ width: 200, height: 200, background: CARD }}>
+      <img src={img} alt="" className="w-full h-full object-cover" style={{ objectPosition: pos }} />
+      {plat && <OttTag plat={plat} />}
     </button>
   );
 }
 
 // a package rail with its category chips (a 32px round logo + name; the picked one light)
 function CategoryRail({ rail, demo, onMore }: { rail: (typeof RAILS)[number]; demo: (label: string) => void; onMore?: () => void }) {
-  const [on, setOn] = useState(rail.chips[0].label);
+  const [on, setOn] = useState(rail.tabs[0].label);
   return (
     <section className="flex flex-col gap-4">
       <RailHeader title={rail.title} more onMore={onMore ?? (() => demo(rail.title))} />
       <div className="store-rail flex gap-2 overflow-x-auto px-4">
-        {rail.chips.map(c => <CategoryChip key={c.label} c={c} sel={c.label === on} withImg={rail.title !== "Great Value"} onTap={() => setOn(c.label)} />)}
+        {rail.tabs.map(c => <CategoryChip key={c.label} c={c} sel={c.label === on} withImg={rail.title !== "Great Value"} onTap={() => setOn(c.label)} />)}
         <Pad />
       </div>
-      <div className="store-rail flex gap-3 overflow-x-auto px-4">{rail.cards.map(p => <PackageCard key={p.t} p={p} onTap={() => demo(p.t)} />)}<Pad /></div>
+      <div className="store-rail flex gap-3 overflow-x-auto px-4">{(rail.tabCards[on] ?? []).map(p => <PackageCard key={p.t} p={p} onTap={() => demo(p.t)} />)}<Pad /></div>
     </section>
   );
 }
@@ -315,7 +381,7 @@ export function CategoryChip({ c, sel, withImg = true, onTap }: { c: Chip; sel: 
         backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
       {withImg && (
         <span className="rounded-full overflow-hidden flex items-center justify-center shrink-0" style={{ width: 32, height: 32, background: c.logo ? "#fff" : "#282828" }}>
-          {c.logo ? <img src={c.logo} alt="" className="w-full h-full object-cover" /> : c.text && <span style={{ fontSize: 10, fontWeight: 800, color: "#fff" }}>{c.text}</span>}
+          {c.logo ? <img src={c.logo} alt="" className={`w-full h-full ${c.contain ? "object-contain p-1" : "object-cover"}`} /> : c.text && <span style={{ fontSize: 10, fontWeight: 800, color: "#fff" }}>{c.text}</span>}
         </span>
       )}
       <span className="whitespace-nowrap" style={{ fontSize: 14, color: sel ? "#fff" : ON_SURFACE, fontWeight: sel ? 600 : 500, textShadow: sel ? "0 1px 3px rgba(0,0,0,.35)" : "none" }}>{c.label}</span>
@@ -358,7 +424,7 @@ function Faqs({ demo }: { demo: (label: string) => void }) {
         </div>
       ))}
       <div className="flex flex-col items-center gap-2">
-        <button onClick={() => demo("View all FAQs")} className="w-full rounded-full" style={{ minHeight: 48, background: "#f0f0f0", fontSize: 16, fontWeight: 700, color: "#282828" }}>View all FAQs</button>
+        <button onClick={() => demo("View all FAQs")} className="w-full rounded-[10px]" style={{ minHeight: 48, background: "#f0f0f0", fontSize: 16, fontWeight: 700, color: "#282828" }}>View all FAQs</button>
         <span style={{ fontSize: 14, fontWeight: 500, color: ON_VARIANT }}>View all FAQs in the myAIS app</span>
       </div>
     </section>

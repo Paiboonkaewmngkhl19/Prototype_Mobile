@@ -18,11 +18,22 @@ export const CHIP_BG = "rgba(255,255,255,.08)", CHIP_BORDER = "rgba(255,255,255,
 // --glass-card / --glass-card-on: cards on the page, and the one that's on (playing / selected)
 export const GLASS_CARD = "linear-gradient(180deg, rgba(161,161,161,.25), rgba(65,65,65,.25))";
 export const GLASS_CARD_ON = "linear-gradient(180deg, rgba(230,230,240,.22), rgba(150,150,165,.16))";
-// --th-panel: sheets and panels; --th-a/b/c: the grey-blue accent gradient for badges
 // full-width background pictures fade into the page with a mask (not a colour), so they blend into any background:
 // a band in the middle of a page fades at both edges, a band at the top of a page only at its bottom
 export const BAND_FADE = "linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%)";
 export const TOP_BAND_FADE = "linear-gradient(to bottom, #000 55%, transparent 100%)";
+// a filled light tint: tonal buttons and status chips on a card
+export const TONAL = "rgba(255,255,255,0.16)";
+// a tag inside a card: white with black text (LIVE stays red)
+export const TAG_BG = "#fff", TAG_TEXT = "#000";
+// the empty part of a progress bar
+export const PROGRESS_TRACK = "rgba(255,255,255,0.4)";
+// the account card (Profile, My Account): stands out from the cards below it
+export const ACCOUNT_CARD = {
+  background: "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0) 45%), linear-gradient(160deg, #3a4254 0%, #2a3040 55%, #1f2533 100%)",
+  boxShadow: "inset 0 0 0 1px rgba(214,222,240,0.22), inset 0 1px 0 rgba(255,255,255,0.18), 0 12px 32px rgba(0,0,0,0.5)",
+};
+// --th-panel: sheets and panels; --th-a/b/c: the grey-blue accent gradient for badges
 export const PANEL = "linear-gradient(100deg, #3a4254 0%, #2a3040 45%, #1c2130 100%)";
 export const PANEL_SOLID = "#1c2130";
 export const ACCENT = "linear-gradient(115deg, #5f6982 0%, #d6def0 55%, #8e98b0 110%)";
