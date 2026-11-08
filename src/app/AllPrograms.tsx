@@ -6,7 +6,7 @@ import iconBellOn from "../assets/epg/bell-filled.svg";
 import { CHANNELS, ChannelLogo, Crown, channelsFor, clock, nowMinutes, scheduleFor, tvStore, type Programme } from "./TVScreen";
 import { FONT, SubFilters, TVSubHeader, subLine, useSubPageScroll, useTVCategory } from "./TVSubHeader";
 import DateTimeSheet, { guideLabel, type GuideTime } from "./DateTimeSheet";
-import { PAGE_BG, ON_SURFACE, ON_VARIANT, LIVE } from "./theme";
+import { PAGE_BG, ON_SURFACE, ON_VARIANT, LIVE, CHIP_BORDER } from "./theme";
 
 // ─── All Program Guide (Figma "PLAY-player" All Program, node 1921:75487) ────────────────────────────────────────
 // Opened from the TV page's floating button (the channel keeps playing in the PiP mini-player): a back arrow and
@@ -101,7 +101,7 @@ function Row({ i, now, view, watching, reminders, rung, onPick, onProgramme }: {
         {/* crown + number side by side; without a crown the number sits centred */}
         <span className={`flex items-center w-full ${c.premium ? "justify-between" : "justify-center"}`}>
           {c.premium && <Crown c={c} size={16} />}
-          <span className="rounded-[4px] px-1 text-center text-white" style={{ minWidth: 28, fontSize: 10, lineHeight: "20px", fontWeight: 600, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{c.no}</span>
+          {!c.excl && <span className="rounded-[4px] px-1 text-center text-white" style={{ minWidth: 28, fontSize: 10, lineHeight: "20px", fontWeight: 600, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{c.no}</span>}
         </span>
       </button>
       {/* programmes */}
@@ -113,7 +113,7 @@ function Row({ i, now, view, watching, reminders, rung, onPick, onProgramme }: {
           const playing = live && watching;
           return (
             <button key={p.start} onClick={() => onProgramme(i, p)} className="shrink-0 flex flex-col justify-center gap-3 rounded-[8px] px-2 py-1 text-left"
-              style={{ width: CARD_W, height: ROW_H, scrollSnapAlign: "start", background: playing ? CARD_ON : onAir ? CARD_NOW : CARD, border: playing ? "1px solid #5a5a5a" : "1px solid transparent", }}>
+              style={{ width: CARD_W, height: ROW_H, scrollSnapAlign: "start", background: playing ? CARD_ON : onAir ? CARD_NOW : CARD, border: playing ? `1px solid ${CHIP_BORDER}` : "1px solid transparent", }}>
               <span className="truncate w-full" style={{ fontSize: 16, lineHeight: "20px", color: ON_SURFACE }}>{p.title}</span>
               <span className="flex items-center justify-between w-full">
                 <span style={{ fontSize: 14, color: ON_VARIANT }}>{clock(p.start)} - {clock(p.end)}</span>

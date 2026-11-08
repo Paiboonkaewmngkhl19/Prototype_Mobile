@@ -18,6 +18,7 @@ import { RAILS, CategoryChip } from "./StorePage";
 import PackageDetailsPage from "./PackageDetailsPage";
 import FilterSheet, { NO_FILTER, filterCount, MOVIE_APP_NAMES, SHORT_APP_NAMES, type PackageFilter } from "./FilterSheet";
 import { PAGE_BG, ON_SURFACE, ON_VARIANT, PANEL, CHIP_BORDER, headerGlass } from "./theme";
+import { SHORT_DRAMAS } from "./catalog";
 
 // ─── Package lists: Sports / Movies / Shorts (Figma "Store" file, AIS PLAY: store_mainPage 4950:209044) ──────────────
 // Opened from the Sports, Movies and Shorts rail titles on the Store: back + "<Kind> Package", a filter button and
@@ -28,6 +29,7 @@ import { PAGE_BG, ON_SURFACE, ON_VARIANT, PANEL, CHIP_BORDER, headerGlass } from
 
 const BASE = import.meta.env.BASE_URL;
 const a = (p: string) => `${BASE}${p}`;
+const drama = (i: number) => a(`posters/shorts/${SHORT_DRAMAS[i].img}`);   // the short-drama posters
 const FONT = "'Open Sans', sans-serif";
 
 export type Kind = "Sports" | "Movies" | "Shorts";
@@ -88,16 +90,16 @@ const PACKAGES: Record<Kind, Pkg[]> = {
       sub: [], league: [], apps: ["iQIYI"], duration: ["Monthly", "Yearly"] },
   ],
   Shorts: [
-    { t: "Clips Unlimited", img: a("tv-features-test/shorts-assets/doomsday.jpg"), price: "149", best: true, cats: ["ReelShort", "DramaBox"],
+    { t: "Clips Unlimited", img: drama(7), price: "149", best: true, cats: ["ReelShort", "DramaBox"],
       logos: [RS, DB, SM], more: 0, channels: 0, screens: 2, hd: true, note: "Every short drama, no ads",
       sub: [], league: [], apps: ["ReelShort", "DramaBox", "ShortMax"], duration: ["Monthly", "Yearly"] },
-    { t: "ReelShort VIP", img: a("tv-features-test/shorts-assets/love-island.jpg"), price: "59", cats: ["ReelShort"],
+    { t: "ReelShort VIP", img: drama(0), price: "59", cats: ["ReelShort"],
       logos: [RS], more: 0, channels: 0, screens: 1, hd: true, note: "+500 short dramas",
       sub: [], league: [], apps: ["ReelShort"], duration: ["Daily", "Monthly"] },
-    { t: "DramaBox", img: a("tv-features-test/shorts-assets/coolch.jpg"), price: "59", cats: ["DramaBox"],
+    { t: "DramaBox", img: drama(1), price: "59", cats: ["DramaBox"],
       logos: [DB], more: 0, channels: 0, screens: 1, hd: true, note: "+300 short dramas",
       sub: [], league: [], apps: ["DramaBox"], duration: ["Daily", "Monthly"] },
-    { t: "Shorts Plus", img: a("tv-features-test/shorts-assets/spiderman.jpg"), price: "99", cats: ["ReelShort", "DramaBox"],
+    { t: "Shorts Plus", img: drama(5), price: "99", cats: ["ReelShort", "DramaBox"],
       logos: [RS, DB], more: 0, channels: 0, screens: 2, hd: true, note: "ReelShort + DramaBox together",
       sub: [], league: [], apps: ["ReelShort", "DramaBox"], duration: ["Monthly"] },
   ],

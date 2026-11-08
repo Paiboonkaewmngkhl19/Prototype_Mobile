@@ -44,7 +44,7 @@ export default function TermsSheet({ topInset, bottomInset = "0px", terms, onAgr
           </div>
           {/* until read: a pill to jump to the end */}
           <button onClick={toBottom} aria-hidden={read} tabIndex={read ? -1 : 0}
-            className="absolute left-1/2 bottom-4 w-max flex items-center gap-2 rounded-full px-4 py-2 transition-all duration-300"
+            className="absolute left-1/2 bottom-4 w-max flex items-center gap-2 rounded-[10px] px-4 py-2 transition-all duration-300"
             style={{ transform: `translateX(-50%) translateY(${read ? 12 : 0}px)`, opacity: read ? 0 : 1, pointerEvents: read ? "none" : "auto",
               background: ON_SURFACE, boxShadow: `0 0 0 2px ${PANEL_RING}, 0 0 0 4px ${ON_SURFACE}, 0 4px 12px rgba(0,0,0,0.35)` }}>
             <img src={icScrollDown} alt="" width={24} height={24} />

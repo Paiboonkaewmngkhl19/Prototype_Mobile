@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Cast, Settings, Heart, Pause, Play, PictureInPicture2, Maximize, History, X } from "lucide-react";
 import iconCrown from "../assets/shorts/crown.svg";
 import iconShare from "../assets/shorts/share-arrow.svg";
-import iconCrownOwned from "../assets/shorts/crown-owned.svg";
 import iconRewind from "../assets/shorts/rewind-10.svg";
 import iconForward from "../assets/shorts/forward-10.svg";
 import iconFullRewind from "../assets/full/rewind.svg";
@@ -15,7 +14,10 @@ import TVShareSheet from "./TVShareSheet";
 import iconBell from "../assets/epg/bell.svg";
 import iconBellOn from "../assets/epg/bell-filled.svg";
 import iconAllPrograms from "../assets/epg/all-programs.svg";
-import { PAGE_BG, BG, PANEL, PANEL_SOLID, OUTLINE, ON_SURFACE, ON_VARIANT, LIVE, PROGRESS, PILL, PILL_RING, GLASS_CARD_ON } from "./theme";
+import { PAGE_BG, BG, PANEL, PANEL_SOLID, OUTLINE, ON_SURFACE, ON_VARIANT, LIVE, PROGRESS, PILL, PILL_RING, GLASS_CARD_ON, CHIP_BORDER } from "./theme";
+import { rules, ruleChannel } from "./mobileRules";
+import { CrownFrame, CROWN_IN_FRAME } from "./cardTags";
+import { TV_LINEUP, type LineupChannel } from "./tvChannels";
 
 // ─── TV tab (Figma "PLAY-player": Mobile_PortraitPlay_Default_TVonmobile 1871:78141, Sticky Browse CH 1871:78788) ───
 // Live TV on the phone: the channel plays in a 16:9 player pinned under the status bar; below it the programme info
@@ -27,14 +29,14 @@ const BASE = import.meta.env.BASE_URL;
 const a = (path: string) => `${BASE}${path}`;
 const FONT = "'Open Sans', sans-serif";
 
-export const CATEGORIES = ["All Channels", "Recently Watched", "Favorite", "Digital TV", "Sports", "Movies & Series", "News", "Cartoons", "Variety", "Others"];
+export const CATEGORIES = ["All Channels", "Recently Watched", "Favorite", "Exclusive", "Digital TV", "Sports", "Movies & Series", "News", "Cartoons", "Variety", "Others"];
 
-type Cat = "Digital TV" | "Sports" | "Movies & Series" | "News" | "Cartoons" | "Variety" | "Others";
+type Cat = "Exclusive" | "Digital TV" | "Sports" | "Movies & Series" | "News" | "Cartoons" | "Variety" | "Others";
 export interface Channel {
   // contain: a non-round logo fitted on white with padding; round: a logo that's already a full round badge, drawn edge
   // to edge (padding would show the badge's own soft edge as a grey ring)
   // logo: an image file, or — for channels without one — a text badge (short label on the channel's colour)
-  no: string; name: string; logo?: string; contain?: boolean; round?: boolean; short?: string; bg?: string; fg?: string; program: string; cats: Cat[]; premium?: boolean;
+  no: string; name: string; logo?: string; box?: number[]; contain?: boolean; round?: boolean; short?: string; bg?: string; fg?: string; program: string; cats: Cat[]; tags: string[]; premium?: boolean; excl?: boolean;
   video?: string; poster: string;
   // timeshift: the programme can be rewound / fast-forwarded (catch-up icon in the list, seekable player)
   timeshift?: boolean;
@@ -42,113 +44,88 @@ export interface Channel {
   // countdown and Explore Packages in the player); owned: its package is bought, so it plays in full (crown + play mark)
   owned?: boolean;
 }
-const PREMIUM_AND_SPORTS: Channel[] = [
-  { no: "902", timeshift: true, name: "Asian Games 2026", logo: a("tv-features-test/live-stream-assets/channel-asian-games.png"), round: true, program: "Football · Japan vs Thailand (Men's Group A)", cats: ["Sports", "Digital TV"], video: a("tv-features-test/Video/Football.mp4"), poster: a("tv-features-test/live-stream-assets/football-255.jpg") },
-  { no: "907", timeshift: true, name: "Asian Games 2026", logo: a("tv-features-test/shorts-assets/channel-907.png"), round: true, program: "Badminton · Women's Singles Quarter-final", cats: ["Sports"], video: a("tv-features-test/Video/bad.mp4"), poster: a("tv-features-test/shorts-assets/badminton.jpg") },
-  { no: "909", name: "Asian Games 2026", logo: a("tv-features-test/shorts-assets/channel-909.png"), round: true, program: "Volleyball · Thailand vs Korea (Women)", cats: ["Sports"], video: a("tv-features-test/Video/vall.mp4"), poster: a("tv-features-test/shorts-assets/volleyball.jpg") },
-  { no: "61", owned: true, name: "PLAY Sports", logo: a("icons/channels/playsports.png"), program: "Premier League · Liverpool vs Brentford", cats: ["Sports"], premium: true, poster: a("posters/upcoming/live.jpg") },
-  { no: "120", name: "MUTV", logo: a("icons/epg/mutv.png"), program: "PL Match: v Chelsea (A) 25/26", cats: ["Sports"], premium: true, poster: a("posters/upcoming/u3.jpg") },
-  { no: "121", name: "Real Madrid TV", logo: a("icons/epg/realmadrid.png"), program: "Champions League 15/16: Real Madrid vs Atlético", cats: ["Sports"], poster: a("posters/upcoming/u2.jpg") },
-  { no: "251", owned: true, timeshift: true, name: "HBO", logo: a("icons/channels/hbo.png"), program: "House of the Dragon · Season 2", cats: ["Movies & Series"], premium: true, video: a("tv-features-test/Video/hbo.mp4"), poster: a("tv-features-test/shorts-assets/hbo.jpg") },
-  { no: "252", name: "HBO Hits", logo: a("icons/channels/hbohits.png"), program: "John Wick: Chapter 4", cats: ["Movies & Series"], premium: true, poster: a("posters_portrait/John.jpg") },
-  { no: "253", timeshift: true, name: "HBO Family", logo: a("icons/channels/hbofamily.png"), program: "Spider-Man: Across the Spider-Verse", cats: ["Movies & Series", "Cartoons"], premium: true, video: a("tv-features-test/Video/spiderman.mp4"), poster: a("tv-features-test/shorts-assets/spiderman.jpg") },
-  { no: "230", owned: true, name: "Warner TV", logo: a("icons/channels/wbtv.png"), program: "Avengers: Doomsday · First Look", cats: ["Movies & Series"], premium: true, video: a("tv-features-test/Video/Dis.mp4"), poster: a("tv-features-test/shorts-assets/doomsday.jpg") },
-  { no: "255", name: "Cinemax", logo: a("icons/channels/cinemax.png"), program: "F1: The Movie", cats: ["Movies & Series"], premium: true, poster: a("posters_portrait/F1.jpg") },
-  { no: "520", name: "CNN", logo: a("icons/epg/cnn.jpg"), program: "CNN News Central", cats: ["News"], poster: a("posters/continue/c4.jpg") },
-  { no: "521", name: "BBC News", logo: a("icons/epg/bbc.jpg"), program: "BBC News at Ten", cats: ["News"], poster: a("posters/continue/c3.jpg") },
-  { no: "135", timeshift: true, name: "Cool Channel", logo: a("tv-features-test/shorts-assets/coolch.jpg"), program: "Cool Live Concert · Bangkok 2026", cats: ["Variety", "Digital TV"], video: a("tv-features-test/Video/Concert.mp4"), poster: a("tv-features-test/shorts-assets/coolch.jpg") },
-  { no: "260", name: "Rock Entertainment", logo: a("icons/channels/rock.png"), program: "Love Island · Season 11", cats: ["Variety"], poster: a("tv-features-test/shorts-assets/love-island.jpg") },
-  { no: "640", name: "W Sport", logo: a("icons/epg/wsport.png"), contain: true, program: "Malaysia Regional Cup '26: Wildcats v Sneakers", cats: ["Sports"], poster: a("posters/upcoming/u4.png") },
-];
+// ─── The channel line-up: the TV prototype's (tvChannels.ts), the same channels, numbers, categories, logos and schedules ───
+const LINEUP = TV_LINEUP;
+const CAT_OF: Record<string, Cat> = { exclusive: "Exclusive", digital: "Digital TV", sports: "Sports", movies: "Movies & Series", news: "News", cartoons: "Cartoons", variety: "Variety", others: "Others" };
+const V = (f: string) => a(`tv-features-test/Video/${f}`);
+// the clip a channel plays (the TV prototype's rule by category; news-only channels show a picture, as there's no news clip here)
+const VIDEO_OF: Record<string, string> = { HBO: "hbo.mp4", "Asian Games 907": "bad.mp4", "COOL Live": "coolch.mp4" };
+const videoFor = (l: LineupChannel) => {
+  const has = (k: string) => l.cats.includes(k);
+  if (VIDEO_OF[l.n]) return V(VIDEO_OF[l.n]);
+  if (l.cats.every(k => k === "news" || k === "digital") && has("news")) return undefined;
+  return has("sports") ? V("Football.mp4") : has("cartoons") ? V("Dis.mp4") : has("variety") ? V("Concert.mp4") : has("movies") ? V("spiderman.mp4") : V("Concert.mp4");
+};
+// the picture while a programme has none of its own
+const FALLBACK: Record<string, string[]> = {
+  sports: ["posters/sport/sportMainPage_footballForYou_No1.webp", "posters/sport/sportMainPage_footballForYou_No5.webp", "posters/sport/sportMainPage_highlight_No1.webp", "posters/sport/sportMainPage_motorsportsForYou_No1.webp"],
+  movies: ["posters/house-of-the-dragon.jpg", "posters/topgun-m.jpg", "posters/district9.jpg", "posters/last-of-us.jpg"],
+  news: ["posters/news/bg-news-filter.webp", "posters/news/bg-news24.webp"],
+  cartoons: ["posters/how-to-train.jpg", "posters/hero/encanto.jpg"],
+  variety: ["tv-features-test/concert-assets/moment-010.jpg", "tv-features-test/concert-assets/moment-120.jpg", "tv-features-test/concert-assets/moment-190.jpg"],
+  digital: ["posters/news/bg-news-filter.webp", "tv-features-test/concert-assets/moment-080.jpg"],
+  others: ["posters/how-to-train.jpg", "posters/last-of-us.jpg"],
+  exclusive: ["posters/liver-ben.jpg"],
+};
+const pictureFor = (l: LineupChannel, i: number, img: string | null | undefined) => {
+  if (img) return a(img);
+  if (l.n === "BBC News") return a("posters/news/bg-bbc.webp");
+  const pool = FALLBACK[l.cats.find(k => k !== "digital") ?? l.cats[0]] ?? FALLBACK.others;
+  return a(pool[i % pool.length]);
+};
 
-// Thai digital TV (NBTC numbers 1–36) and a few more, with text badges in place of logo files
+// each channel repeats its line-up around the real clock, from a per-channel offset; about 4 in 10 programmes have Time Shift
+const progsCache: Programme[][] = [];
+const progsOf = (i: number) => {
+  if (progsCache[i]) return progsCache[i];
+  const l = LINEUP[i], now = nowMinutes(), list: Programme[] = [];
+  let t = -(90 + Math.round((i * 37 % 120) / 15) * 15), k = 0;
+  while (t < 9 * 1440) {
+    const s = l.sched[k % l.sched.length], start = t, hour = Math.floor((((start % 1440) + 1440) % 1440) / 60);
+    t += s[1];
+    list.push({ title: s[0], start, end: t, img: s[2], ts: (!!l.tsNow && start <= now && t > now) || (l.no * 7 + k * 13 + hour) % 10 < 4 });
+    k++;
+  }
+  return progsCache[i] = list;
+};
+const onAirIndex = (i: number, at: number) => { const k = progsOf(i).findIndex(p => p.end > at); return k < 0 ? progsOf(i).length - 1 : k; };
+const onAir = (i: number) => progsOf(i)[onAirIndex(i, nowMinutes())];
 
-const POSTERS = ["posters/SC.jpg", "posters/all.jpg", "posters/arsenal.jpg", "posters/f1.jpg", "posters/maxresdefault.jpg",
-  "posters/continue/c1.jpg", "posters/continue/c2.jpg", "posters/continue/c5.jpg", "posters/upcoming/u1.jpg",
-  "posters_portrait/ex1.jpg", "posters_portrait/ex2.jpg", "posters_portrait/ex4.jpg", "posters_portrait/ex5.jpg", "posters_portrait/debt.jpg"];
-const th = (no: string, name: string, short: string, bg: string, fg: string, program: string, cats: Cat[], i: number): Channel =>
-  ({ no, name, short, bg, fg, program, cats, poster: a(POSTERS[i % POSTERS.length]) });
-const THAI: Channel[] = [
-  th("1", "TV5 HD", "TV5", "#0a7d3b", "#fff", "Morning News · Thailand Today", ["Digital TV", "News"], 0),
-  th("2", "NBT", "NBT", "#1f4fa3", "#fff", "NBT News Hour", ["Digital TV", "News"], 1),
-  th("3", "Thai PBS", "PBS", "#f58220", "#fff", "Thai PBS Documentary: Mekong Life", ["Digital TV", "News", "Others"], 2),
-  th("4", "ALTV", "ALTV", "#7b3fa0", "#fff", "Learning Space for Kids", ["Digital TV", "Cartoons", "Others"], 3),
-  th("10", "TPTV", "TPTV", "#b8892b", "#fff", "Parliament Live Session", ["Digital TV", "News"], 4),
-  th("16", "TNN16", "TNN", "#c8102e", "#fff", "TNN Business Update", ["Digital TV", "News"], 5),
-  th("18", "JKN18", "JKN", "#1a1a1a", "#fff", "Global News Tonight", ["Digital TV", "News"], 6),
-  th("22", "Nation TV", "NTV", "#0055a5", "#fff", "Nation Talk Night", ["Digital TV", "News"], 7),
-  th("23", "Workpoint TV", "WP", "#ff2d55", "#fff", "The Mask Singer Thailand", ["Digital TV", "Variety"], 8),
-  th("24", "True4U", "4U", "#e60012", "#fff", "Thai Lakorn Classic", ["Digital TV", "Variety"], 9),
-  th("25", "GMM25", "25", "#ff6a00", "#fff", "GMM25 Series: Love Mechanics", ["Digital TV", "Movies & Series"], 10),
-  th("27", "Channel 8", "8", "#d91e2b", "#fff", "Muay Thai Super Champ", ["Digital TV", "Sports"], 11),
-  th("29", "Mono29", "MONO", "#111111", "#fff", "Mono Movie: Action Night", ["Digital TV", "Movies & Series"], 12),
-  th("30", "MCOT HD", "MCOT", "#e2001a", "#fff", "MCOT Evening News", ["Digital TV", "News"], 13),
-  th("31", "One31", "31", "#e4007f", "#fff", "One31 Lakorn: Love Destiny", ["Digital TV", "Variety"], 0),
-  th("32", "Thairath TV", "TR", "#003b8e", "#fff", "Thairath News Night", ["Digital TV", "News"], 1),
-  th("33", "Channel 3 HD", "3", "#f7a600", "#1a1a1a", "Channel 3 Drama: Buppesannivas", ["Digital TV", "Variety"], 2),
-  th("34", "Amarin TV", "AMR", "#0b8fd6", "#fff", "Amarin Talk Show", ["Digital TV", "Variety"], 3),
-  th("35", "Channel 7 HD", "7", "#00a650", "#fff", "Channel 7 Lakorn Prime Time", ["Digital TV", "Variety"], 4),
-  th("36", "PPTV HD", "PPTV", "#1c2a6b", "#fff", "Thai League 1 Highlights", ["Digital TV", "Sports"], 5),
-  th("41", "Bugaboo TV", "BUG", "#ffcc00", "#222", "Cartoon Morning", ["Cartoons"], 6),
-  th("50", "PLAY Kids", "KIDS", "#b8f416", "#111", "PLAY Kids: Animal Friends", ["Cartoons"], 7),
-  th("62", "PLAY Sports 2", "PS2", "#b8f416", "#111", "Thai League 1: Buriram vs BG Pathum", ["Sports"], 8),
-  th("70", "PLAY Movie", "PM", "#b8f416", "#111", "PLAY Movie: Thai Box Office", ["Movies & Series"], 9),
-  th("80", "PLAY Shop", "SHOP", "#ff5e8a", "#fff", "PLAY Shop Live: Home & Kitchen Deals", ["Others"], 10),
-];
-
-// all 40 channels, in channel-number order
-export const CHANNELS: Channel[] = [...THAI, ...PREMIUM_AND_SPORTS].sort((x, y) => Number(x.no) - Number(y.no));
+// all the channels, in channel-number order; the programme, picture and Time Shift follow what's on now
+export const CHANNELS: Channel[] = LINEUP.map((l, i): Channel => ({
+  no: String(l.no), name: l.n, excl: l.excl, cats: l.cats.map(k => CAT_OF[k]), tags: l.tags,
+  logo: l.logo ? a(l.logo) : undefined, box: l.box ?? (l.fit === "contain" ? [15, 15, 70, 70] : undefined), round: l.fit === "cover" || undefined,
+  short: l.logo ? undefined : l.txt, bg: l.bg === "#2a2a2a" ? PANEL_SOLID : l.bg, fg: "#fff", premium: !!l.crown, owned: l.crown === "owned", video: videoFor(l),
+  get program() { return onAir(i).title; },
+  get poster() { return pictureFor(l, i, onAir(i).img); },
+  get timeshift() { return onAir(i).ts; },
+}));
 const indexOf = (no: string) => CHANNELS.findIndex(c => c.no === no);
 
 // recently watched and favourites, kept here so they survive leaving the TV page (PiP, All Program Guide) and coming back
 // recently watched, favourites, the category tab and programme reminders ("channel-start"), shared by the TV page and All Program Guide
 // (kept here so they survive leaving the TV page for those pages or the PiP mini-player and coming back)
-export const tvStore = { recent: [indexOf("902")], favs: new Set([indexOf("902"), indexOf("251")]), cat: "All Channels", reminders: new Set<string>() };
+export const tvStore = { recent: LINEUP.flatMap((l, i) => l.recent ? [i] : []), favs: new Set(LINEUP.flatMap((l, i) => l.fav ? [i] : [])), cat: "All Channels", reminders: new Set<string>() };
 
 // ── Programme schedule (All Program Guide) ──
 // Each channel runs back-to-back programmes through today; the one on air now is the programme the TV page shows.
-export interface Programme { title: string; start: number; end: number }   // minutes since midnight
-const SHOWS: Record<Cat, string[]> = {
-  "Digital TV": ["Morning Talk", "Lunchtime News", "Thai Lakorn Rerun", "Afternoon Variety", "Evening News", "Prime Time Drama", "Late Night Talk"],
-  Sports: ["Match Preview", "Live Match", "Post-Match Analysis", "Classic Matches", "Sports Tonight", "Highlights Show", "Training Ground"],
-  "Movies & Series": ["Feature Film", "Series Marathon", "Behind the Scenes", "Blockbuster Night", "Box Office Hits", "Director's Cut", "Late Movie"],
-  News: ["Headlines", "World Report", "Business Update", "News Hour", "Debate Live", "Weather & Traffic", "Night News"],
-  Cartoons: ["Cartoon Morning", "Animal Friends", "Learn & Play", "Super Heroes", "Toon Time", "Story Hour", "Bedtime Tales"],
-  Variety: ["Game Show", "Music Live", "Cooking Battle", "Comedy Hour", "Talent Show", "Talk Show", "Concert Special"],
-  Others: ["Program", "Special Feature", "Documentary", "Magazine Show", "Replay", "Community Hour", "Night Program"],
-};
+export interface Programme { title: string; start: number; end: number; img?: string | null; ts?: boolean }   // minutes since midnight
 export const nowMinutes = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
 export const clock = (m: number) => { const t = ((m % 1440) + 1440) % 1440; return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`; };
 // around: the moment to build the schedule around, in minutes from midnight today (another day: ± 1440 per day);
 // the programme on air now keeps the TV page's title
 export const scheduleFor = (i: number, around = nowMinutes()): Programme[] => {
-  const c = CHANNELS[i], now = nowMinutes(), pool = SHOWS[c.cats[0]];
-  // slot lengths vary by channel (30/60/90 min), on the hour or the half hour
-  const len = [60, 30, 90, 60][i % 4];
-  const offset = (i % 2) * 30 % len;
-  const first = Math.floor((around - offset) / len) * len + offset;
-  const out: Programme[] = [];
-  for (let k = -4; k <= 6; k++) {
-    const start = first + k * len, slot = Math.floor((start - offset) / len);
-    const live = start <= now && now < start + len;
-    out.push({ title: live ? c.program : pool[((slot % pool.length) + pool.length + i) % pool.length], start, end: start + len });
-  }
-  return out;
+  const l = LINEUP[i], list = progsOf(i);
+  if (l.excl) { const live = onAirIndex(i, nowMinutes()); return list.slice(live, live + 1 + (l.up ?? 0)); }   // Exclusive: the live one and what's right after it
+  const at = onAirIndex(i, around);
+  return list.slice(Math.max(0, at - 4), at + 7);
 };
 
-// sub-genres, by channel number (for the sub filters)
-const TAGS: Record<string, string[]> = {
-  "902": ["Multi-Sports", "Football"], "907": ["Multi-Sports"], "909": ["Multi-Sports"],
-  "61": ["Football", "Golf", "Tennis"], "62": ["Football", "Motorsport", "Rugby"], "120": ["Football"], "121": ["Football"], "36": ["Football"],
-  "27": ["Boxing"], "640": ["Basketball"],
-  "4": ["Education"], "3": ["Documentary"], "80": ["Shopping"],
-};
-const tagged = (t: string) => (c: Channel) => (TAGS[c.no] ?? []).includes(t);
-
-// sub filters under a category tab (All Program Guide), "All" first: only Sports and Others
+// sub filters under a category tab (TV page, All Program Guide), "All" first: only Sports and Others
+const tagged = (id: string, label: string) => ({ label, test: (c: Channel) => c.tags.includes(id) });
 export const SUBFILTERS: Partial<Record<string, { label: string; test: (c: Channel) => boolean }[]>> = {
-  Sports: ["Multi-Sports", "Football", "Motorsport", "Golf", "Basketball", "Tennis", "Rugby", "Boxing"].map(t => ({ label: t, test: tagged(t) })),
-  Others: ["Education", "Documentary", "Shopping"].map(t => ({ label: t, test: tagged(t) })),
+  Sports: [tagged("multi", "Multi-Sports"), tagged("football", "Football"), tagged("motorsport", "Motorsport"), tagged("golf", "Golf"), tagged("basketball", "Basketball"), tagged("tennis", "Tennis"), tagged("rugby", "Rugby"), tagged("boxing", "Boxing")],
+  Others: [tagged("education", "Education"), tagged("documentary", "Documentary"), tagged("shopping", "Shopping")],
 };
 
 // the channels under a category tab (TV page list, All Program Guide), optionally narrowed
@@ -176,6 +153,9 @@ const fmt = (s: number) => {
 // where the TV page picks up: the channel and playback position (from the PiP mini-player, or a fresh start)
 export interface TVPos { cur: number; t: number }
 
+const TIME_SHIFT_LOCKED = "Time Shift is part of the package. Get it to pause and rewind";
+const RULE_SEEK = 10;   // RULES.SEEK_STEP_SECONDS
+
 export default function TVScreen({ topInset, bottom, muted, start, onBack, onPrograms, onOpenStore, onShare, onToast }: {
   topInset: string; bottom: string; muted: boolean; start?: TVPos | null; onShare: (ch: Channel) => void;
   // the floating button opens All Program Guide, the channel carrying on in the PiP mini-player meanwhile
@@ -196,7 +176,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   useEffect(() => { tvStore.cat = cat; }, [cat]);
   const ch = CHANNELS[cur];
 
-  // player: controls show on tap and fade after 3s; premium channels run a free-preview countdown
+  // player: controls show on tap and fade on their own (rules.js); premium channels run a free-preview countdown
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(true);
   const [time, setTime] = useState({ t: 0, d: 0 });
@@ -207,18 +187,23 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   const wake = () => {
     setControls(true);
     clearTimeout(hideAt.current);
-    hideAt.current = setTimeout(() => setControls(false), 3000);
+    const after = rules().touch.controlsHideAfter(live.previewOver);   // null: they stay up once the preview is over
+    if (after !== null) hideAt.current = setTimeout(() => setControls(false), after);
   };
   useEffect(() => { wake(); return () => clearTimeout(hideAt.current); }, [cur]);
-  const [preview, setPreview] = useState(174);
-  useEffect(() => { setPreview(174); }, [cur]);
+  // what the viewer may do on this channel (rules.js): the free preview counts only while playing and is kept per
+  // channel, so leaving and coming back doesn't restart it; Time Shift and pause need the package
+  const [, setPreviewTick] = useState(0);
+  const live = rules().liveState(ruleChannel(ch), !!ch.timeshift);
   useEffect(() => {
-    if (!ch.premium || ch.owned) return;
-    const t = setInterval(() => setPreview(p => Math.max(0, p - 1)), 1000);
+    if (!live.preview || live.previewOver || !playing) return;
+    const t = setInterval(() => { rules().previewTick(ruleChannel(CHANNELS[cur]), true); setPreviewTick(n => n + 1); }, 1000);
     return () => clearInterval(t);
-  }, [cur, ch.premium, ch.owned]);
+  }, [cur, live.preview, live.previewOver, playing]);
+  useEffect(() => { if (live.previewOver) { video.current?.pause(); wake(); } }, [cur, live.previewOver]);
 
   const togglePlay = () => {
+    if (!live.canPause) { if (live.timeShiftLocked) onToast(TIME_SHIFT_LOCKED); return; }
     const v = video.current;
     if (v) { if (v.paused) v.play().catch(() => {}); else v.pause(); }
     else setPlaying(p => !p);
@@ -305,11 +290,15 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   const [vol, setVol] = useState(1);
   useEffect(() => { const v = video.current; if (v) { v.volume = vol; if (vol > 0 && full && v.muted) v.muted = false; } }, [vol, cur]);
 
-  // ── Time shift: double-tap a side to jump 10s, hold a side to rewind / fast-forward at 2x, drag the seek bar ──
+  // ── Touch (rules.js R.touch): double-tap a side to jump 10s, hold a side to rewind / fast-forward (2x, 4x, 8x, 16x the
+  // longer it's held), drag the seek bar; swipe up / down changes channel, from the left edge opens the mini EPG ──
   // Only on channels with time shift; a live-only channel plays at the live edge and none of these respond.
-  const seekable = !!ch.timeshift && !!ch.video;
+  const seekable = live.canSeek && !!ch.video;
+  const gesture = (g: string) => rules().touch.player({ player: "live", gesture: g, controlsVisible: controls, live });
   const DOUBLE_TAP_MS = 300, HOLD_MS = 450;
-  const press = useRef<{ x: number; y: number; side: -1 | 1; timer?: ReturnType<typeof setTimeout>; held: boolean } | null>(null);
+  const press = useRef<{ x: number; y: number; frac: number; side: -1 | 1; timer?: ReturnType<typeof setTimeout>; held: boolean } | null>(null);
+  const swiped = useRef(false);
+  const [holdX, setHoldX] = useState(2);
   const [hold, setHold] = useState<-1 | 0 | 1>(0);
   const rewinder = useRef<ReturnType<typeof setInterval>>();
   const wasPlaying = useRef(true);
@@ -341,12 +330,16 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   const startHold = (side: -1 | 1) => {
     const v = video.current;
     if (!v) return;
-    setHold(side); setControls(false);
-    if (side > 0) { v.playbackRate = 2; return; }
-    // browsers can't play backwards: pause and step back at 2x speed instead
-    wasPlaying.current = !v.paused;
-    v.pause();
-    rewinder.current = setInterval(() => skip(-0.2), 100);
+    setHold(side); setControls(false); setHoldX(2);
+    const from = performance.now();
+    if (side > 0) v.playbackRate = 2;
+    else { wasPlaying.current = !v.paused; v.pause(); }   // browsers can't play backwards: pause and step back instead
+    rewinder.current = setInterval(() => {
+      const x = rules().touch.holdSpeed((performance.now() - from) / 1000);
+      setHoldX(x);
+      if (side < 0) skip(-x * 0.1);
+      else if (behind.current > 0) v.playbackRate = x;   // fast-forward only runs while behind live
+    }, 100);
   };
   const endHold = () => {
     const v = video.current;
@@ -355,30 +348,46 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
     setHold(0);
   };
   const onPressStart = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!seekable || (e.target as Element).closest("button")) return;
-    const p = { x: e.clientX, y: e.clientY, side: (sideAt(e, e.currentTarget) < 0.5 ? -1 : 1) as -1 | 1, held: false } as NonNullable<typeof press.current>;
-    p.timer = setTimeout(() => { p.held = true; startHold(p.side); }, HOLD_MS);
+    if ((e.target as Element).closest("button")) return;
+    const frac = sideAt(e, e.currentTarget);
+    const p = { x: e.clientX, y: e.clientY, frac, side: (frac < 0.5 ? -1 : 1) as -1 | 1, held: false } as NonNullable<typeof press.current>;
+    p.timer = setTimeout(() => {
+      const r = gesture(p.side < 0 ? "longPressLeft" : "longPressRight");
+      if (r.act === "holdSeek" && ch.video) { p.held = true; startHold(p.side); }
+      else if (r.act === "timeShiftLocked") { p.held = true; onToast(r.message); }
+    }, HOLD_MS);
     press.current = p;
   };
   const onPressMove = (e: React.PointerEvent) => {
     const p = press.current;
-    if (p && !p.held && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) { clearTimeout(p.timer); press.current = null; }
+    if (p && !p.held && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) clearTimeout(p.timer);
   };
-  const onPressEnd = () => {
+  const onPressEnd = (e: React.PointerEvent) => {
     const p = press.current;
     if (!p) return;
     clearTimeout(p.timer);
-    if (p.held) endHold();
+    if (p.held) { if (hold !== 0) endHold(); return; }
+    if (e.type !== "pointerup" || (full && epg)) return;
+    // a swipe, in the player's own axes (the full-screen player can be rotated on a portrait phone)
+    const sx = e.clientX - p.x, sy = e.clientY - p.y, dx = rotated ? sy : sx, dy = rotated ? -sx : sy;
+    const g = Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx) * 1.5 ? (dy < 0 ? "swipeUp" : "swipeDown")
+      : dx > 50 && p.frac < 0.12 && Math.abs(dx) > Math.abs(dy) * 1.5 ? "swipeFromLeft" : null;
+    if (!g) return;
+    swiped.current = true; press.current = null;
+    const r = gesture(g);
+    if (r.act === "changeChannel") { const next = rules().zap(ch.no, r.dir); pick(CHANNELS.findIndex(c => c.no === next.n)); wake(); }
+    else if (r.act === "openMiniEpg" && full) setEpg(true);
   };
   // a tap brings the controls up; another tap while they're showing puts them away
   const toggleControls = () => { if (controls) { clearTimeout(hideAt.current); setControls(false); } else wake(); };
   const onTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (swiped.current) { swiped.current = false; return; }   // the end of a swipe, not a tap
     const p = press.current;
     press.current = null;
     if (p?.held) return;                       // the end of a hold, not a tap
     // mini EPG open: a tap on the picture closes it, back to the full player
     if (full && epg) { clearTimeout(singleTap.current); setEpg(false); wake(); return; }
-    if (!seekable) { toggleControls(); return; }
+    if (!seekable && !live.timeShiftLocked) { toggleControls(); return; }
     const fx = sideAt(e, e.currentTarget);
     const side: -1 | 0 | 1 = fx < 0.4 ? -1 : fx > 0.6 ? 1 : 0;
     const now = e.timeStamp, last = lastTap.current;
@@ -386,8 +395,10 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
     lastTap.current = { t: now, side, streak: quick ? last.streak + 1 : 0 };
     clearTimeout(singleTap.current);
     if (quick) {
-      skip(side * 10);
-      setTapFx({ side: side as -1 | 1, secs: 10 * lastTap.current.streak, key: now });
+      const r = gesture(side < 0 ? "doubleTapLeft" : "doubleTapRight");
+      if (r.act === "timeShiftLocked") { onToast(r.message); return; }
+      skip(side * RULE_SEEK);
+      setTapFx({ side: side as -1 | 1, secs: RULE_SEEK * (lastTap.current.streak || 1), key: now });
       return;
     }
     singleTap.current = setTimeout(toggleControls, DOUBLE_TAP_MS);
@@ -475,9 +486,9 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
                 ? { top: 0, left: 0, transform: `translate(${area.w - safe.r}px, ${safe.t}px) rotate(90deg)` }
                 : { top: safe.t, left: safe.l, transform: "none" }) }
           : { aspectRatio: "16 / 9", background: PANEL_SOLID }),
-        touchAction: seekable ? "manipulation" : undefined, userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
+        touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
         onClick={onTap} onPointerDown={onPressStart} onPointerMove={onPressMove} onPointerUp={onPressEnd} onPointerCancel={onPressEnd} onPointerLeave={onPressEnd}
-        onContextMenu={e => { if (seekable) e.preventDefault(); }}>
+        onContextMenu={e => e.preventDefault()}>
         {ch.video
           ? <video key={ch.video} ref={video} src={ch.video} poster={ch.poster} autoPlay loop muted={muted} playsInline
               className="absolute" style={{ ...(full && epg ? { left: 0, top: 0, width: boxW, height: boxH } : { inset: 0, width: "100%", height: "100%" }), objectFit: full ? "contain" : "cover", filter: bright < 1 ? `brightness(${bright})` : undefined }}
@@ -505,7 +516,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
             scrubbing={scrubbing} fav={fav} bright={bright} vol={vol} up={up} barRef={barRef}
             onBack={exitFull} onFav={toggleFav} onShare={share} onDemo={demo}
             onSkip={secs => { skip(secs); setTapFx({ side: secs < 0 ? -1 : 1, secs: Math.abs(secs), key: Date.now() }); wake(); }}
-            onPlay={togglePlay} onBrowse={() => setEpg(true)} onPip={() => { exitFull(); leave(); }} onMinimize={exitFull}
+            onPlay={togglePlay} showPlay={live.canPause || live.timeShiftLocked} onBrowse={() => setEpg(true)} onPip={() => { exitFull(); leave(); }} onMinimize={exitFull}
             onBright={b => { setBright(b); clearTimeout(hideAt.current); }} onVol={v => { setVol(v); clearTimeout(hideAt.current); }} onSlideEnd={wake}
             onSeekDown={onSeekDown} onSeekMove={onSeekMove} onSeekUp={onSeekUp} />
         )}
@@ -523,9 +534,9 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
           <div className="absolute inset-x-0 bottom-0 flex flex-col" style={{ paddingBottom: 7 }}>
             <div className="flex items-center justify-between px-4" style={{ height: 32 }}>
               <div className="flex items-center gap-2">
-                <button onClick={e => { e.stopPropagation(); togglePlay(); }} aria-label={playing ? "Pause" : "Play"}>
+                {(live.canPause || live.timeShiftLocked) && <button onClick={e => { e.stopPropagation(); togglePlay(); }} aria-label={playing ? "Pause" : "Play"}>
                   {playing ? <Pause size={24} color="#fff" fill="#fff" /> : <Play size={24} color="#fff" fill="#fff" />}
-                </button>
+                </button>}
                 {started && (
                   <span style={{ fontSize: 13, fontWeight: 500, color: "#fff", fontVariantNumeric: "tabular-nums", textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}>{elapsed(time.t)}</span>
                 )}
@@ -539,7 +550,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
         </div>}
         {/* free preview / Explore Packages: stays on screen while the rest of the controls are hidden, sliding down
             to 8px above the 3px seek bar */}
-        {ch.premium && !ch.owned && !(full && epg) && (
+        {live.showExplorePackage && !(full && epg) && (
           <div className="absolute inset-x-0 flex items-end justify-between px-4 pb-2"
             // full screen: 16px above the seek line (its top is 69px up: 16 padding + 40 row + 7 of its 20px box)
             style={full
@@ -547,7 +558,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
               : { bottom: 7 + 32, transform: controls ? "none" : "translateY(36px)", transition: "transform .3s cubic-bezier(.2,0,0,1)" }}>
             <span className="flex items-center gap-2 rounded-[4px]" style={{ height: full ? 40 : 32, padding: full ? "0 12px" : "0 8px", fontSize: full ? 14 : 10, background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.25)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
               <span style={{ color: ON_VARIANT }}>Free preview</span>
-              <span style={{ color: ON_SURFACE, fontWeight: 600 }}>• {fmt(preview)} minutes left</span>
+              <span style={{ color: ON_SURFACE, fontWeight: 600 }}>{live.previewOver ? "• Ended" : `• ${fmt(live.previewLeft)} minutes left`}</span>
             </span>
             <button onClick={e => { e.stopPropagation(); exitFull(); onOpenStore({ cur, t: video.current?.currentTime ?? 0 }); }}
               className="flex items-center gap-1 rounded-[4px]" style={{ height: full ? 40 : 32, padding: full ? "0 12px" : "0 8px", background: PILL, boxShadow: PILL_RING, color: "#fff", fontSize: full ? 14 : 10, fontWeight: 600, textShadow: "0 1px 3px rgba(0,0,0,.35)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
@@ -566,11 +577,11 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
             </span>
           </div>
         )}
-        {/* hold: 2x rewind / fast-forward pill */}
+        {/* hold: rewind / fast-forward speed pill */}
         {hold !== 0 && (
           <span className="tv-fade absolute left-1/2 top-3 -translate-x-1/2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-white pointer-events-none"
             style={{ background: "rgba(0,0,0,0.6)", fontSize: 13, fontWeight: 600 }}>
-            {hold < 0 ? <><span className="tracking-[-3px]">◀◀</span> 2x</> : <>2x <span className="tracking-[-3px]">▶▶</span></>}
+            {hold < 0 ? <><span className="tracking-[-3px]">◀◀</span> {holdX}x</> : <>{holdX}x <span className="tracking-[-3px]">▶▶</span></>}
           </span>
         )}
         {/* scrubbing: the time, large, in the middle of the picture */}
@@ -587,7 +598,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
           // programme title's top padding, which has nothing to tap)
           <div className="absolute inset-x-0 flex items-start" style={{ bottom: -34, height: 10 + 3 + 34, paddingTop: 10, touchAction: "none" }}
             onPointerDown={onSeekDown} onPointerMove={onSeekMove} onPointerUp={onSeekUp} onPointerCancel={onSeekUp} onClick={e => e.stopPropagation()}>
-            <div ref={barRef} className="relative w-full" style={{ height: 3, background: "#4a4a4a" }}>
+            <div ref={barRef} className="relative w-full" style={{ height: 3, background: CHIP_BORDER }}>
               <div className="absolute left-0 top-0 h-full" style={{ width: `${played * 100}%`, background: PROGRESS }} />
               {(controls || scrubbing) && (
                 // white handle centred on the line, 12px (16px while dragging), kept 8px clear of the screen edges
@@ -614,10 +625,10 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
           <div className="flex items-center gap-2">
             <div className="flex flex-1 items-center gap-2 min-w-0">
               <ChannelLogo c={ch} size={32} />
-              <span className="truncate" style={{ fontSize: 16, fontWeight: 500, color: ON_VARIANT }}>{ch.name} HD</span>
-              <span style={{ fontSize: 16, color: ON_VARIANT }}>|</span>
+              <span className="truncate" style={{ fontSize: 16, fontWeight: 500, color: ON_VARIANT }}>{ch.name}</span>
+              {!ch.excl && <span style={{ fontSize: 16, color: ON_VARIANT }}>|</span>}
               {ch.premium && <Crown c={ch} size={20} />}
-              <span style={{ fontSize: 16, fontWeight: 500, color: ON_VARIANT }}>{ch.no}</span>
+              {!ch.excl && <span style={{ fontSize: 16, fontWeight: 500, color: ON_VARIANT }}>{ch.no}</span>}
             </div>
             <div className="flex items-center gap-4">
               <button onClick={toggleFav} aria-label={fav ? "Remove from favorites" : "Add to favorites"} aria-pressed={fav} className="relative">
@@ -667,9 +678,9 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
                   <div className="flex items-center gap-4 min-w-0">
                     <div className="flex items-center gap-2 shrink-0">
                       {c.premium && <Crown c={c} size={16} />}
-                      <span className="rounded-[4px] px-1 text-center text-white" style={{ minWidth: 28, fontSize: 10, lineHeight: "20px", fontWeight: 600, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{c.no}</span>
+                      {!c.excl && <span className="rounded-[4px] px-1 text-center text-white" style={{ minWidth: 28, fontSize: 10, lineHeight: "20px", fontWeight: 600, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{c.no}</span>}
                     </div>
-                    <span className="shrink-0" style={{ width: 1, height: 14, background: "#4a4a4a" }} />
+                    {!c.excl && <span className="shrink-0" style={{ width: 1, height: 14, background: CHIP_BORDER }} />}
                     <span className="truncate" style={{ fontSize: 12, color: ON_VARIANT }}>{c.name}</span>
                   </div>
                 </div>
@@ -694,7 +705,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
         <button onClick={() => onPrograms({ cur, t: video.current?.currentTime ?? 0 })} aria-label="All Programs"
           className="absolute right-4 bottom-4 z-20 w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-transform"
           style={{ background: PILL, boxShadow: `${PILL_RING}, 0 8px 20px rgba(0,0,0,0.45)`, backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
-          <img src={iconAllPrograms} alt="" width={24} height={24} className="block" />
+          <img src={iconAllPrograms} alt="" width={28} height={28} className="block" />
         </button>
       )}
       <style>{`.tv-scroll{scrollbar-width:none}.tv-scroll::-webkit-scrollbar,.tv-rail::-webkit-scrollbar{display:none}.tv-rail{scrollbar-width:none}
@@ -711,10 +722,11 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   );
 }
 
-export function Crown({ c, size }: { c: Channel; size: number }) {
-  return c.owned
-    ? <img src={iconCrownOwned} alt="Premium, package bought" style={{ width: size, height: size * 17 / 16 }} />
-    : <img src={iconCrown} alt="Premium, free preview" style={{ width: size, height: size }} />;
+// a channel's crown (rules.js): gold until the viewer has it; once owned it shows nothing, like a free channel
+export function Crown({ c, size, framed }: { c: Channel; size: number; framed?: boolean }) {
+  if (!rules().showsCrown({ ch: ruleChannel(c) })) return null;
+  if (framed) return <CrownFrame><img src={iconCrown} alt="Premium, free preview" width={CROWN_IN_FRAME} height={CROWN_IN_FRAME} /></CrownFrame>;
+  return <img src={iconCrown} alt="Premium, free preview" style={{ width: size, height: size }} />;
 }
 
 // the 9-bar waveform in the tag ripples out from the middle while the channel plays, and rests in full when paused
@@ -735,9 +747,15 @@ function WatchingTag({ playing, className = "" }: { playing: boolean; className?
 }
 
 export function ChannelLogo({ c, size }: { c: Channel; size: number }) {
+  const len = c.short?.length ?? 0;
   if (!c.logo) return (
     <span className="shrink-0 rounded-full flex items-center justify-center" style={{ width: size, height: size, background: c.bg, color: c.fg }}>
-      <span style={{ fontSize: size * ((c.short?.length ?? 0) > 3 ? 0.24 : (c.short?.length ?? 0) > 2 ? 0.3 : 0.4), fontWeight: 800, letterSpacing: 0.3 }}>{c.short}</span>
+      <span className="text-center" style={{ padding: size * 0.06, fontSize: size * (len <= 2 ? 0.4 : len === 3 ? 0.3 : len <= 5 ? 0.24 : len <= 10 ? 0.16 : 0.135), fontWeight: 800, letterSpacing: 0.3, lineHeight: 1.1 }}>{c.short}</span>
+    </span>
+  );
+  if (c.box) return (
+    <span className="relative block shrink-0 overflow-hidden rounded-full" style={{ width: size, height: size, background: c.bg }}>
+      <img src={c.logo} alt="" className="absolute max-w-none" style={{ left: `${c.box[0]}%`, top: `${c.box[1]}%`, width: `${c.box[2]}%`, height: `${c.box[3]}%`, objectFit: "contain" }} />
     </span>
   );
   return (
@@ -756,7 +774,7 @@ function FullControls(p: {
   ch: Channel; shown: boolean; playing: boolean; seekable: boolean; started: boolean; t: number; played: number; scrubbing: boolean;
   fav: boolean; bright: number; vol: number; up: (e: Pt, r: DOMRect) => number; barRef: React.RefObject<HTMLDivElement>;
   onBack: () => void; onFav: () => void; onShare: () => void; onDemo: (label: string) => void; onSkip: (secs: number) => void;
-  onPlay: () => void; onBrowse: () => void; onPip: () => void; onMinimize: () => void;
+  onPlay: () => void; showPlay: boolean; onBrowse: () => void; onPip: () => void; onMinimize: () => void;
   onBright: (v: number) => void; onVol: (v: number) => void; onSlideEnd: () => void;
   onSeekDown: (e: React.PointerEvent<HTMLDivElement>) => void; onSeekMove: (e: React.PointerEvent) => void; onSeekUp: (e: React.PointerEvent) => void;
 }) {
@@ -778,7 +796,7 @@ function FullControls(p: {
               <span className="flex items-center gap-[6px]">
                 <span className="truncate" style={{ fontSize: 12, color: ON_SURFACE }}>{p.ch.name}</span>
                 {p.ch.premium && <Crown c={p.ch} size={16} />}
-                <span className="rounded-[4px] px-2 text-center text-white" style={{ minWidth: 40, fontSize: 12, lineHeight: "20px", fontWeight: 500, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{p.ch.no}</span>
+                {!p.ch.excl && <span className="rounded-[4px] px-2 text-center text-white" style={{ minWidth: 40, fontSize: 12, lineHeight: "20px", fontWeight: 500, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{p.ch.no}</span>}
               </span>
             </div>
           </div>
@@ -800,10 +818,10 @@ function FullControls(p: {
             <img src={iconFullRewind} alt="" width={32} height={32} className="block" />
           </button>
         )}
-        <button onClick={stop(p.onPlay)} aria-label={p.playing ? "Pause" : "Play"} className="rounded-full flex items-center justify-center"
+        {p.showPlay && <button onClick={stop(p.onPlay)} aria-label={p.playing ? "Pause" : "Play"} className="rounded-full flex items-center justify-center"
           style={{ width: 80, height: 80, background: "rgba(0,0,0,0.45)", boxShadow: "inset 0 0 0 3px #fff" }}>
           {p.playing ? <Pause size={34} color="#fff" fill="#fff" /> : <Play size={34} color="#fff" fill="#fff" style={{ marginLeft: 4 }} />}
-        </button>
+        </button>}
         {p.seekable && (
           <button onClick={stop(() => p.onSkip(10))} aria-label="Forward 10 seconds" className="rounded-full p-2" style={{ background: "rgba(0,0,0,0.6)" }}>
             <img src={iconFullForward} alt="" width={32} height={32} className="block" />
@@ -820,7 +838,7 @@ function FullControls(p: {
         {p.seekable ? (
           <div className="relative flex items-center" style={{ height: 20, touchAction: "none" }}
             onPointerDown={p.onSeekDown} onPointerMove={p.onSeekMove} onPointerUp={p.onSeekUp} onPointerCancel={p.onSeekUp} onClick={e => e.stopPropagation()}>
-            <div ref={p.barRef} className="relative w-full rounded-full" style={{ height: 6, background: "#4a4a4a" }}>
+            <div ref={p.barRef} className="relative w-full rounded-full" style={{ height: 6, background: CHIP_BORDER }}>
               <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${p.played * 100}%`, background: PROGRESS }} />
               <span className="absolute top-1/2 rounded-full" style={{
                 left: `clamp(7px, ${p.played * 100}%, calc(100% - 7px))`, width: 14, height: 14, background: "#fff", border: "2px solid #fff",
@@ -924,7 +942,7 @@ function MiniEpg(p: {
           {p.seekable ? (
             <div className="relative flex items-center" style={{ height: 20, touchAction: "none" }}
               onPointerDown={p.onSeekDown} onPointerMove={p.onSeekMove} onPointerUp={p.onSeekUp} onPointerCancel={p.onSeekUp} onClick={e => e.stopPropagation()}>
-              <div ref={p.barRef} className="relative w-full rounded-full" style={{ height: 6, background: "#4a4a4a" }}>
+              <div ref={p.barRef} className="relative w-full rounded-full" style={{ height: 6, background: CHIP_BORDER }}>
                 <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: `${p.played * 100}%`, background: PROGRESS }} />
                 <span className="absolute top-1/2 rounded-full" style={{ left: `clamp(7px, ${p.played * 100}%, calc(100% - 7px))`, width: 14, height: 14, background: "#fff", boxShadow: "0 2px 6px rgba(0,0,0,0.25)", transform: `translate(-50%, -50%) scale(${p.scrubbing ? 1.15 : 1})` }} />
               </div>
@@ -950,7 +968,7 @@ function MiniEpg(p: {
             const onAir = k === 0 && x.start <= now, key = `${p.cur}-${x.start}`, reminded = reminders.has(key);
             return (
               <button key={x.start} onClick={() => (onAir ? p.onBack() : remind(x))} className="shrink-0 flex flex-col justify-center gap-1 rounded-[8px] px-2 py-1 text-left"
-                style={{ width: 200, height: 56, background: onAir ? "rgba(255,255,255,0.17)" : "rgba(255,255,255,0.08)", border: onAir ? "1px solid #5a5a5a" : "1px solid transparent" }}>
+                style={{ width: 200, height: 56, background: onAir ? "rgba(255,255,255,0.17)" : "rgba(255,255,255,0.08)", border: onAir ? `1px solid ${CHIP_BORDER}` : "1px solid transparent" }}>
                 <span className="truncate w-full" style={{ fontSize: 14, lineHeight: "18px", color: ON_SURFACE }}>{x.title}</span>
                 <span className="flex items-center justify-between w-full">
                   <span style={{ fontSize: 12, color: ON_VARIANT }}>{clock(x.start)} - {clock(x.end)}</span>
@@ -991,8 +1009,8 @@ function MiniEpg(p: {
                   <span className="truncate" style={{ fontSize: 14, lineHeight: "18px", color: ON_SURFACE }}>{c.program}</span>
                   <div className="flex items-center gap-2 min-w-0">
                     {c.premium && <Crown c={c} size={16} />}
-                    <span className="shrink-0 rounded-[4px] px-1 text-center text-white" style={{ minWidth: 28, fontSize: 10, lineHeight: "20px", fontWeight: 600, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{c.no}</span>
-                    <span className="shrink-0" style={{ width: 1, height: 14, background: "#4a4a4a" }} />
+                    {!c.excl && <span className="shrink-0 rounded-[4px] px-1 text-center text-white" style={{ minWidth: 28, fontSize: 10, lineHeight: "20px", fontWeight: 600, background: "rgba(214,222,240,0.18)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)" }}>{c.no}</span>}
+                    {!c.excl && <span className="shrink-0" style={{ width: 1, height: 14, background: CHIP_BORDER }} />}
                     <span className="truncate" style={{ fontSize: 12, color: ON_VARIANT }}>{c.name}</span>
                     {on && <WatchingTag playing={p.playing} className="ml-auto" />}
                   </div>

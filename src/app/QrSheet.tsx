@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import imgQr from "../assets/payment/qr.png";
 import icDownload from "../assets/payment/download.svg";
 import { PANEL, ON_SURFACE } from "./theme";
+import { RULES } from "./mobileRules";
 
 // ─── QR PromptPay sheet (Figma "Store" file, PLAY:store_qrPayment 4765:201767) ─────────────────────────────────────
 // After Process Payment with QR PromptPay: a tall sheet with back + "QR PromptPay", the billing note, the QR with
@@ -12,7 +13,7 @@ import { PANEL, ON_SURFACE } from "./theme";
 
 // how long a (demo) payment takes to come through, also used by the CVV sheet
 export const PAID_AFTER_MS = 5000;
-const WINDOW_S = 5 * 60;
+const WINDOW_S = RULES.QR_PAY_SECONDS;
 
 export default function QrSheet({ topInset, amount, account, onPaid, onClose, onToast }: {
   topInset: string; amount: string; account: string;

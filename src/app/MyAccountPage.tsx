@@ -4,7 +4,7 @@ import imgAvatar from "../assets/shorts/avatar-user.png";
 import icBack from "../assets/account/icon-back.svg";
 import icEdit from "../assets/account/icon-edit.svg";
 import icChevron from "../assets/account/chevron.svg";
-import { PAGE_BG, ON_SURFACE, ON_VARIANT, GLASS_CARD, CHIP_BORDER, OUTLINE } from "./theme";
+import { PAGE_BG, ON_SURFACE, ON_VARIANT, GLASS_CARD, CHIP_BORDER, OUTLINE, BAND_FADE, ACCOUNT_CARD, TONAL } from "./theme";
 
 // ─── My Account (Figma "PLAY profile & settings", myAccount_notLinked 256:36034) ─────────────────────────────────
 // Opened from My Account on the Profile card: back + "My Account", the account card (avatar, name with edit, account
@@ -14,7 +14,7 @@ import { PAGE_BG, ON_SURFACE, ON_VARIANT, GLASS_CARD, CHIP_BORDER, OUTLINE } fro
 
 const FONT = "'Open Sans', sans-serif";
 // Figma "Tonal Filled" button, as on the Profile page
-const TONAL = { background: "rgba(255,255,255,0.16)", boxShadow: "0 4px 8px rgba(0,0,0,0.2)" };
+const TONAL_BUTTON = { background: TONAL, boxShadow: "0 4px 8px rgba(0,0,0,0.2)" };
 
 type Row = { label: string; value?: string; edit?: boolean };
 const ACCOUNT_INFO: Row[] = [
@@ -57,12 +57,9 @@ export default function MyAccountPage({ topInset, bottomInset = "0px", fullScree
         <div style={{ height: `calc(${topInset} + 64px)` }} />
         {/* the account card, over the "Screen: Inox" band and above a thick divider */}
         <div className="relative flex flex-col items-center px-4 pt-10 pb-5" style={{ borderBottom: `5px solid ${OUTLINE}` }}>
-          <img src={imgHeaderBg} alt="" className="absolute inset-x-0 top-0 w-full object-cover pointer-events-none" style={{ height: 136 }} />
-          <div className="relative w-full flex flex-col gap-4 p-4 rounded-[16px]" style={{
-            background: "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0) 45%), linear-gradient(160deg, #3a4254 0%, #2a3040 55%, #1f2533 100%)",
-            boxShadow: "inset 0 0 0 1px rgba(214,222,240,0.22), inset 0 1px 0 rgba(255,255,255,0.18), 0 12px 32px rgba(0,0,0,0.5)",
-          }}>
-            <span className="absolute right-2 top-2 flex items-center rounded-full px-[10px]" style={{ height: 24, fontSize: 11, fontWeight: 700, color: ON_SURFACE, background: "#6a6a6a" }}>Not Linked</span>
+          <img src={imgHeaderBg} alt="" className="absolute inset-x-0 top-0 w-full object-cover pointer-events-none" style={{ height: 136, WebkitMaskImage: BAND_FADE, maskImage: BAND_FADE }} />
+          <div className="relative w-full flex flex-col gap-4 p-4 rounded-[16px]" style={ACCOUNT_CARD}>
+            <span className="absolute right-2 top-2 flex items-center rounded-full px-[10px]" style={{ height: 24, fontSize: 11, fontWeight: 700, color: ON_SURFACE, background: TONAL }}>Not Linked</span>
             <div className="flex items-center gap-2">
               <img src={imgAvatar} alt="" className="shrink-0 rounded-full object-cover" style={{ width: 80, height: 80, background: "#404045" }} />
               <div className="flex flex-1 flex-col gap-2 min-w-0">
@@ -74,7 +71,7 @@ export default function MyAccountPage({ topInset, bottomInset = "0px", fullScree
                 <span className="truncate" style={{ fontSize: 12, color: ON_VARIANT }}>AIS Fibre</span>
               </div>
             </div>
-            <button onClick={() => demo("Link myAIS Account")} className="w-full flex items-center justify-center rounded-[10px] px-[14px]" style={{ minHeight: 40, ...TONAL }}>
+            <button onClick={() => demo("Link myAIS Account")} className="w-full flex items-center justify-center rounded-[10px] px-[14px]" style={{ minHeight: 40, ...TONAL_BUTTON }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0" }}>Link myAIS Account</span>
             </button>
           </div>

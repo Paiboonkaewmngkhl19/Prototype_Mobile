@@ -1,0 +1,27 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="68" height="100" viewBox="0 0 68 100" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="2 (Stroke)" filter="url(#filter0_i_0_61)">
+<use xlink:href="#stroke0_0_61" fill="url(#paint0_linear_0_61)" fill-opacity="0.5"/>
+<use xlink:href="#stroke0_0_61" fill="url(#paint1_linear_0_61)" fill-opacity="0.4"/>
+</g>
+<defs>
+<filter id="filter0_i_0_61" x="0" y="0" width="68" height="101.739" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="1.73854"/>
+<feGaussianBlur stdDeviation="4.34636"/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.852334 0 0 0 0 0.852334 0 0 0 0 0.852334 0 0 0 0.1 0"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_0_61"/>
+</filter>
+<linearGradient id="paint0_linear_0_61" x1="34" y1="0" x2="34" y2="100" gradientUnits="userSpaceOnUse">
+<stop stop-color="white" stop-opacity="0.4"/>
+<stop offset="1" stop-color="white" stop-opacity="0.1"/>
+</linearGradient>
+<linearGradient id="paint1_linear_0_61" x1="57.8381" y1="37.2093" x2="41.5412" y2="37.2093" gradientUnits="userSpaceOnUse">
+<stop/>
+<stop offset="1" stop-color="#393939" stop-opacity="0.2"/>
+</linearGradient>
+<path id="stroke0_0_61" d="M66.7218 28.3247C66.7218 31.9396 66.0435 35.5014 64.6981 39.001C63.3598 42.4823 61.3668 46.0155 58.7444 49.6012L58.7387 49.609L58.7331 49.6165C56.1263 53.0938 52.757 56.9805 48.6377 61.2734L28.8414 82.0972H68V100H0.894983V84.5885L27.1581 57.1427C32.2631 51.78 36.1616 47.54 38.8631 44.4149L38.8653 44.4124C41.6381 41.2181 43.4932 38.5713 44.5117 36.455C45.5228 34.3541 46.0152 32.2455 46.0152 30.1152C46.0152 26.4796 44.8728 23.7882 42.7095 21.8403L42.6896 21.8222C40.5614 19.8398 37.7772 18.7979 34.1919 18.7979C30.4369 18.7979 27.2592 19.8846 24.5808 22.0282L24.5699 22.037L24.5587 22.0457C21.9001 24.0976 19.8853 27.1919 18.5937 31.4723L18.1281 33.0152L0 27.3762L0.28803 25.9601C1.36155 20.6796 3.56365 16.0783 6.90554 12.1927C10.2161 8.25814 14.2481 5.25764 18.9844 3.2013C23.7896 1.06678 28.8639 0 34.1919 0C40.5195 7.3172e-06 46.1334 1.14333 50.9903 3.48291C55.9107 5.81195 59.7651 9.10745 62.4953 13.3781C65.3291 17.6765 66.7218 22.6795 66.7218 28.3247Z"/>
+</defs>
+</svg>
