@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import icCheck from "../assets/pkg-details/check-circle.svg";
 import icChevron from "../assets/pkg-details/chevron.svg";
@@ -34,6 +34,7 @@ import OtpPage from "./OtpPage";
 import QrSheet from "./QrSheet";
 import PurchaseDonePage from "./PurchaseDonePage";
 import { PAGE_BG, ON_SURFACE, ON_VARIANT, PANEL, OUTLINE, headerGlass } from "./theme";
+import { recordPurchase } from "./mobileRules";
 
 // ─── Package Details (Figma "Store" file, AIS PLAY: store_packageDetails 4425:145449) ───────────────────────────────
 // Opened from View details on a package card: back + "Package Details" over the page (glass once it scrolls, like the
@@ -138,6 +139,8 @@ export default function PackageDetailsPage({ p, topInset, bottomInset = "0px", o
   const [qr, setQr] = useState(false);
   const [cvvCard, setCvvCard] = useState<Method | null>(null);
   const [paidWith, setPaidWith] = useState<string | null>(null);
+  // what the purchase unlocks (crowns, previews and Time Shift follow it)
+  useEffect(() => { if (paidWith) recordPurchase(p.t); }, [paidWith]);
   const [method, setMethod] = useState("");
   const sports: CoverageItem[] = [
     ...p.league.filter(l => LEAGUES[l]).map(l => ({ key: l, name: LEAGUES[l].name ?? l, tile: (size: number) => <Tile {...LEAGUES[l]} size={size} /> })),

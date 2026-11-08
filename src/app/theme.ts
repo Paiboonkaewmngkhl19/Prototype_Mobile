@@ -19,6 +19,10 @@ export const CHIP_BG = "rgba(255,255,255,.08)", CHIP_BORDER = "rgba(255,255,255,
 export const GLASS_CARD = "linear-gradient(180deg, rgba(161,161,161,.25), rgba(65,65,65,.25))";
 export const GLASS_CARD_ON = "linear-gradient(180deg, rgba(230,230,240,.22), rgba(150,150,165,.16))";
 // --th-panel: sheets and panels; --th-a/b/c: the grey-blue accent gradient for badges
+// full-width background pictures fade into the page with a mask (not a colour), so they blend into any background:
+// a band in the middle of a page fades at both edges, a band at the top of a page only at its bottom
+export const BAND_FADE = "linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%)";
+export const TOP_BAND_FADE = "linear-gradient(to bottom, #000 55%, transparent 100%)";
 export const PANEL = "linear-gradient(100deg, #3a4254 0%, #2a3040 45%, #1c2130 100%)";
 export const PANEL_SOLID = "#1c2130";
 export const ACCENT = "linear-gradient(115deg, #5f6982 0%, #d6def0 55%, #8e98b0 110%)";

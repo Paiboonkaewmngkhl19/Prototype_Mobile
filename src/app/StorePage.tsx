@@ -14,6 +14,7 @@ import lgUcl from "../assets/sport/lg-ucl.png";
 import lgRws from "../assets/sport/lg-rws.png";
 import type { Kind } from "./PackagesPage";
 import { PAGE_BG, BG, ON_SURFACE, ON_VARIANT, CHIP_BG, CHIP_BORDER, PILL, PILL_RING, GLASS_CARD, PANEL, OUTLINE } from "./theme";
+import { SHORT_DRAMAS } from "./catalog";
 
 // ─── Store (Figma "Store" file, Mobile / Content modal 5222:66002) ────────────────────────────────────────────────
 // Opened from the Store rail on For you and Sports: a package hero (title, badges, Subscribe, VAT), package rails with
@@ -26,6 +27,8 @@ const FONT = "'Open Sans', sans-serif";
 // cards in the app theme: the TV prototype's glass card
 const CARD = GLASS_CARD;
 
+// the short-drama posters: ReelShort, DramaBox, ReelShort and ShortMax, in the order of the Shorts packages
+const drama = (i: number) => a(`posters/shorts/${SHORT_DRAMAS[i].img}`);
 type Pkg = { img: string; price: string; t: string };
 const pkgs = (imgs: string[], price = "199 baht / Month", titles?: string[]): Pkg[] =>
   imgs.map((img, k) => ({ img, price, t: titles?.[k] ?? "Package Title" }));
@@ -56,7 +59,7 @@ export const RAILS: { title: string; chips: Chip[]; cards: Pkg[] }[] = [
   {
     title: "Shorts",
     chips: [{ label: "Popular" }, { label: "ReelShort", text: "RS" }, { label: "DramaBox", text: "DB" }],
-    cards: pkgs([a("tv-features-test/shorts-assets/love-island.jpg"), a("tv-features-test/shorts-assets/coolch.jpg"), a("tv-features-test/shorts-assets/spiderman.jpg"), a("tv-features-test/shorts-assets/doomsday.jpg")], "59 baht / Month",
+    cards: pkgs([drama(0), drama(1), drama(5), drama(7)], "59 baht / Month",
       ["ReelShort VIP", "DramaBox", "Shorts Plus", "Clips Unlimited"]),
   },
   {
@@ -64,16 +67,16 @@ export const RAILS: { title: string; chips: Chip[]; cards: Pkg[] }[] = [
     chips: [{ label: "< 100 baht Enjoy" }, { label: "< 100 baht Sports" }, { label: "300 baht+" }],
     cards: [
       { img: a("posters_portrait/debt.jpg"), price: "99 baht / Month", t: "Thai Series Pack" },
-      { img: a("posters_portrait/ex2.jpg"), price: "999 baht / Month", t: "PLAY All Yearly" },
-      { img: a("posters_portrait/ex5.jpg"), price: "79 baht / Month", t: "Concert Pass" },
+      { img: a("posters_portrait/ex5.jpg"), price: "999 baht / Month", t: "PLAY All Yearly" },
+      { img: a("posters_portrait/ex2.jpg"), price: "79 baht / Month", t: "Concert Pass" },
       { img: a("posters_portrait/topgun_m.jpg"), price: "399 baht / Month", t: "Movie Max" },
     ],
   },
 ];
 const PPV = [
   { img: a("posters_portrait/ex3.jpg"), price: "199 baht", t: "Man City vs Arsenal", when: "Oct 23, 2026 | 20:00 – 22:15" },
-  { img: a("posters_portrait/ex1.jpg"), price: "299 baht", t: "BOSSCK Dream Concert", when: "Oct 30, 2026 | 19:00 – 22:00" },
-  { img: a("posters_portrait/ex2.jpg"), price: "149 baht", t: "The Sophomore D-Day", when: "Nov 1, 2026 | 18:00 – 21:00" },
+  { img: a("posters_portrait/ex2.jpg"), price: "299 baht", t: "BOSSCK Dream Concert", when: "Oct 30, 2026 | 19:00 – 22:00" },
+  { img: a("posters_portrait/ex1.jpg"), price: "149 baht", t: "The Sophomore D-Day", when: "Nov 1, 2026 | 18:00 – 21:00" },
 ];
 const HIGHLIGHT = pkgs([a("posters_portrait/ex4.jpg"), a("posters_portrait/lotr/r5.jpg"), a("posters_portrait/Venom.jpg")], "99 baht / Month", ["Matchday Live", "Fantasy Pack", "Action Pack"]);
 const RENT = [a("posters_portrait/John.jpg"), a("posters_portrait/Venom.jpg"), a("posters_portrait/avatar.jpg"), a("posters_portrait/F1.jpg")];

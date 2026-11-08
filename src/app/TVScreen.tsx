@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Cast, Settings, Heart, Pause, Play, PictureInPicture2, Maximize, History, X } from "lucide-react";
 import iconCrown from "../assets/shorts/crown.svg";
 import iconShare from "../assets/shorts/share-arrow.svg";
-import iconCrownOwned from "../assets/shorts/crown-owned.svg";
 import iconRewind from "../assets/shorts/rewind-10.svg";
 import iconForward from "../assets/shorts/forward-10.svg";
 import iconFullRewind from "../assets/full/rewind.svg";
@@ -16,6 +15,7 @@ import iconBell from "../assets/epg/bell.svg";
 import iconBellOn from "../assets/epg/bell-filled.svg";
 import iconAllPrograms from "../assets/epg/all-programs.svg";
 import { PAGE_BG, BG, PANEL, PANEL_SOLID, OUTLINE, ON_SURFACE, ON_VARIANT, LIVE, PROGRESS, PILL, PILL_RING, GLASS_CARD_ON } from "./theme";
+import { rules, ruleChannel } from "./mobileRules";
 
 // ─── TV tab (Figma "PLAY-player": Mobile_PortraitPlay_Default_TVonmobile 1871:78141, Sticky Browse CH 1871:78788) ───
 // Live TV on the phone: the channel plays in a 16:9 player pinned under the status bar; below it the programme info
@@ -47,18 +47,18 @@ const PREMIUM_AND_SPORTS: Channel[] = [
   { no: "907", timeshift: true, name: "Asian Games 2026", logo: a("tv-features-test/shorts-assets/channel-907.png"), round: true, program: "Badminton · Women's Singles Quarter-final", cats: ["Sports"], video: a("tv-features-test/Video/bad.mp4"), poster: a("tv-features-test/shorts-assets/badminton.jpg") },
   { no: "909", name: "Asian Games 2026", logo: a("tv-features-test/shorts-assets/channel-909.png"), round: true, program: "Volleyball · Thailand vs Korea (Women)", cats: ["Sports"], video: a("tv-features-test/Video/vall.mp4"), poster: a("tv-features-test/shorts-assets/volleyball.jpg") },
   { no: "61", owned: true, name: "PLAY Sports", logo: a("icons/channels/playsports.png"), program: "Premier League · Liverpool vs Brentford", cats: ["Sports"], premium: true, poster: a("posters/upcoming/live.jpg") },
-  { no: "120", name: "MUTV", logo: a("icons/epg/mutv.png"), program: "PL Match: v Chelsea (A) 25/26", cats: ["Sports"], premium: true, poster: a("posters/upcoming/u3.jpg") },
-  { no: "121", name: "Real Madrid TV", logo: a("icons/epg/realmadrid.png"), program: "Champions League 15/16: Real Madrid vs Atlético", cats: ["Sports"], poster: a("posters/upcoming/u2.jpg") },
+  { no: "120", name: "MUTV", logo: a("icons/epg/mutv.png"), program: "PL Match: v Chelsea (A) 25/26", cats: ["Sports"], premium: true, poster: a("posters/sport/sportMainPage_footballForYou_No2.webp") },
+  { no: "121", name: "Real Madrid TV", logo: a("icons/epg/realmadrid.png"), program: "Champions League 15/16: Real Madrid vs Atlético", cats: ["Sports"], poster: a("posters/sport/sportMainPage_liveUpcoming_No2.webp") },
   { no: "251", owned: true, timeshift: true, name: "HBO", logo: a("icons/channels/hbo.png"), program: "House of the Dragon · Season 2", cats: ["Movies & Series"], premium: true, video: a("tv-features-test/Video/hbo.mp4"), poster: a("tv-features-test/shorts-assets/hbo.jpg") },
   { no: "252", name: "HBO Hits", logo: a("icons/channels/hbohits.png"), program: "John Wick: Chapter 4", cats: ["Movies & Series"], premium: true, poster: a("posters_portrait/John.jpg") },
   { no: "253", timeshift: true, name: "HBO Family", logo: a("icons/channels/hbofamily.png"), program: "Spider-Man: Across the Spider-Verse", cats: ["Movies & Series", "Cartoons"], premium: true, video: a("tv-features-test/Video/spiderman.mp4"), poster: a("tv-features-test/shorts-assets/spiderman.jpg") },
   { no: "230", owned: true, name: "Warner TV", logo: a("icons/channels/wbtv.png"), program: "Avengers: Doomsday · First Look", cats: ["Movies & Series"], premium: true, video: a("tv-features-test/Video/Dis.mp4"), poster: a("tv-features-test/shorts-assets/doomsday.jpg") },
   { no: "255", name: "Cinemax", logo: a("icons/channels/cinemax.png"), program: "F1: The Movie", cats: ["Movies & Series"], premium: true, poster: a("posters_portrait/F1.jpg") },
-  { no: "520", name: "CNN", logo: a("icons/epg/cnn.jpg"), program: "CNN News Central", cats: ["News"], poster: a("posters/continue/c4.jpg") },
-  { no: "521", name: "BBC News", logo: a("icons/epg/bbc.jpg"), program: "BBC News at Ten", cats: ["News"], poster: a("posters/continue/c3.jpg") },
+  { no: "520", name: "CNN", logo: a("icons/epg/cnn.jpg"), program: "CNN News Central", cats: ["News"], poster: a("posters/news/bg-news-filter.webp") },
+  { no: "521", name: "BBC News", logo: a("icons/epg/bbc.jpg"), program: "BBC News at Ten", cats: ["News"], poster: a("posters/news/bg-bbc.webp") },
   { no: "135", timeshift: true, name: "Cool Channel", logo: a("tv-features-test/shorts-assets/coolch.jpg"), program: "Cool Live Concert · Bangkok 2026", cats: ["Variety", "Digital TV"], video: a("tv-features-test/Video/Concert.mp4"), poster: a("tv-features-test/shorts-assets/coolch.jpg") },
   { no: "260", name: "Rock Entertainment", logo: a("icons/channels/rock.png"), program: "Love Island · Season 11", cats: ["Variety"], poster: a("tv-features-test/shorts-assets/love-island.jpg") },
-  { no: "640", name: "W Sport", logo: a("icons/epg/wsport.png"), contain: true, program: "Malaysia Regional Cup '26: Wildcats v Sneakers", cats: ["Sports"], poster: a("posters/upcoming/u4.png") },
+  { no: "640", name: "W Sport", logo: a("icons/epg/wsport.png"), contain: true, program: "Malaysia Regional Cup '26: Wildcats v Sneakers", cats: ["Sports"], poster: a("posters/sport/sportMainPage_basketballForYou_No3.webp") },
 ];
 
 // Thai digital TV (NBTC numbers 1–36) and a few more, with text badges in place of logo files
@@ -176,6 +176,9 @@ const fmt = (s: number) => {
 // where the TV page picks up: the channel and playback position (from the PiP mini-player, or a fresh start)
 export interface TVPos { cur: number; t: number }
 
+const TIME_SHIFT_LOCKED = "Time Shift is part of the package. Get it to pause and rewind";
+const RULE_SEEK = 10;   // RULES.SEEK_STEP_SECONDS
+
 export default function TVScreen({ topInset, bottom, muted, start, onBack, onPrograms, onOpenStore, onShare, onToast }: {
   topInset: string; bottom: string; muted: boolean; start?: TVPos | null; onShare: (ch: Channel) => void;
   // the floating button opens All Program Guide, the channel carrying on in the PiP mini-player meanwhile
@@ -196,7 +199,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   useEffect(() => { tvStore.cat = cat; }, [cat]);
   const ch = CHANNELS[cur];
 
-  // player: controls show on tap and fade after 3s; premium channels run a free-preview countdown
+  // player: controls show on tap and fade on their own (rules.js); premium channels run a free-preview countdown
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(true);
   const [time, setTime] = useState({ t: 0, d: 0 });
@@ -207,18 +210,23 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   const wake = () => {
     setControls(true);
     clearTimeout(hideAt.current);
-    hideAt.current = setTimeout(() => setControls(false), 3000);
+    const after = rules().touch.controlsHideAfter(live.previewOver);   // null: they stay up once the preview is over
+    if (after !== null) hideAt.current = setTimeout(() => setControls(false), after);
   };
   useEffect(() => { wake(); return () => clearTimeout(hideAt.current); }, [cur]);
-  const [preview, setPreview] = useState(174);
-  useEffect(() => { setPreview(174); }, [cur]);
+  // what the viewer may do on this channel (rules.js): the free preview counts only while playing and is kept per
+  // channel, so leaving and coming back doesn't restart it; Time Shift and pause need the package
+  const [, setPreviewTick] = useState(0);
+  const live = rules().liveState(ruleChannel(ch), !!ch.timeshift);
   useEffect(() => {
-    if (!ch.premium || ch.owned) return;
-    const t = setInterval(() => setPreview(p => Math.max(0, p - 1)), 1000);
+    if (!live.preview || live.previewOver || !playing) return;
+    const t = setInterval(() => { rules().previewTick(ruleChannel(CHANNELS[cur]), true); setPreviewTick(n => n + 1); }, 1000);
     return () => clearInterval(t);
-  }, [cur, ch.premium, ch.owned]);
+  }, [cur, live.preview, live.previewOver, playing]);
+  useEffect(() => { if (live.previewOver) { video.current?.pause(); wake(); } }, [cur, live.previewOver]);
 
   const togglePlay = () => {
+    if (!live.canPause) { if (live.timeShiftLocked) onToast(TIME_SHIFT_LOCKED); return; }
     const v = video.current;
     if (v) { if (v.paused) v.play().catch(() => {}); else v.pause(); }
     else setPlaying(p => !p);
@@ -305,11 +313,15 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   const [vol, setVol] = useState(1);
   useEffect(() => { const v = video.current; if (v) { v.volume = vol; if (vol > 0 && full && v.muted) v.muted = false; } }, [vol, cur]);
 
-  // ── Time shift: double-tap a side to jump 10s, hold a side to rewind / fast-forward at 2x, drag the seek bar ──
+  // ── Touch (rules.js R.touch): double-tap a side to jump 10s, hold a side to rewind / fast-forward (2x, 4x, 8x, 16x the
+  // longer it's held), drag the seek bar; swipe up / down changes channel, from the left edge opens the mini EPG ──
   // Only on channels with time shift; a live-only channel plays at the live edge and none of these respond.
-  const seekable = !!ch.timeshift && !!ch.video;
+  const seekable = live.canSeek && !!ch.video;
+  const gesture = (g: string) => rules().touch.player({ player: "live", gesture: g, controlsVisible: controls, live });
   const DOUBLE_TAP_MS = 300, HOLD_MS = 450;
-  const press = useRef<{ x: number; y: number; side: -1 | 1; timer?: ReturnType<typeof setTimeout>; held: boolean } | null>(null);
+  const press = useRef<{ x: number; y: number; frac: number; side: -1 | 1; timer?: ReturnType<typeof setTimeout>; held: boolean } | null>(null);
+  const swiped = useRef(false);
+  const [holdX, setHoldX] = useState(2);
   const [hold, setHold] = useState<-1 | 0 | 1>(0);
   const rewinder = useRef<ReturnType<typeof setInterval>>();
   const wasPlaying = useRef(true);
@@ -341,12 +353,16 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   const startHold = (side: -1 | 1) => {
     const v = video.current;
     if (!v) return;
-    setHold(side); setControls(false);
-    if (side > 0) { v.playbackRate = 2; return; }
-    // browsers can't play backwards: pause and step back at 2x speed instead
-    wasPlaying.current = !v.paused;
-    v.pause();
-    rewinder.current = setInterval(() => skip(-0.2), 100);
+    setHold(side); setControls(false); setHoldX(2);
+    const from = performance.now();
+    if (side > 0) v.playbackRate = 2;
+    else { wasPlaying.current = !v.paused; v.pause(); }   // browsers can't play backwards: pause and step back instead
+    rewinder.current = setInterval(() => {
+      const x = rules().touch.holdSpeed((performance.now() - from) / 1000);
+      setHoldX(x);
+      if (side < 0) skip(-x * 0.1);
+      else if (behind.current > 0) v.playbackRate = x;   // fast-forward only runs while behind live
+    }, 100);
   };
   const endHold = () => {
     const v = video.current;
@@ -355,30 +371,46 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
     setHold(0);
   };
   const onPressStart = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!seekable || (e.target as Element).closest("button")) return;
-    const p = { x: e.clientX, y: e.clientY, side: (sideAt(e, e.currentTarget) < 0.5 ? -1 : 1) as -1 | 1, held: false } as NonNullable<typeof press.current>;
-    p.timer = setTimeout(() => { p.held = true; startHold(p.side); }, HOLD_MS);
+    if ((e.target as Element).closest("button")) return;
+    const frac = sideAt(e, e.currentTarget);
+    const p = { x: e.clientX, y: e.clientY, frac, side: (frac < 0.5 ? -1 : 1) as -1 | 1, held: false } as NonNullable<typeof press.current>;
+    p.timer = setTimeout(() => {
+      const r = gesture(p.side < 0 ? "longPressLeft" : "longPressRight");
+      if (r.act === "holdSeek" && ch.video) { p.held = true; startHold(p.side); }
+      else if (r.act === "timeShiftLocked") { p.held = true; onToast(r.message); }
+    }, HOLD_MS);
     press.current = p;
   };
   const onPressMove = (e: React.PointerEvent) => {
     const p = press.current;
-    if (p && !p.held && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) { clearTimeout(p.timer); press.current = null; }
+    if (p && !p.held && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) clearTimeout(p.timer);
   };
-  const onPressEnd = () => {
+  const onPressEnd = (e: React.PointerEvent) => {
     const p = press.current;
     if (!p) return;
     clearTimeout(p.timer);
-    if (p.held) endHold();
+    if (p.held) { if (hold !== 0) endHold(); return; }
+    if (e.type !== "pointerup" || (full && epg)) return;
+    // a swipe, in the player's own axes (the full-screen player can be rotated on a portrait phone)
+    const sx = e.clientX - p.x, sy = e.clientY - p.y, dx = rotated ? sy : sx, dy = rotated ? -sx : sy;
+    const g = Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx) * 1.5 ? (dy < 0 ? "swipeUp" : "swipeDown")
+      : dx > 50 && p.frac < 0.12 && Math.abs(dx) > Math.abs(dy) * 1.5 ? "swipeFromLeft" : null;
+    if (!g) return;
+    swiped.current = true; press.current = null;
+    const r = gesture(g);
+    if (r.act === "changeChannel") { const next = rules().zap(ch.no, r.dir); pick(CHANNELS.findIndex(c => c.no === next.n)); wake(); }
+    else if (r.act === "openMiniEpg" && full) setEpg(true);
   };
   // a tap brings the controls up; another tap while they're showing puts them away
   const toggleControls = () => { if (controls) { clearTimeout(hideAt.current); setControls(false); } else wake(); };
   const onTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (swiped.current) { swiped.current = false; return; }   // the end of a swipe, not a tap
     const p = press.current;
     press.current = null;
     if (p?.held) return;                       // the end of a hold, not a tap
     // mini EPG open: a tap on the picture closes it, back to the full player
     if (full && epg) { clearTimeout(singleTap.current); setEpg(false); wake(); return; }
-    if (!seekable) { toggleControls(); return; }
+    if (!seekable && !live.timeShiftLocked) { toggleControls(); return; }
     const fx = sideAt(e, e.currentTarget);
     const side: -1 | 0 | 1 = fx < 0.4 ? -1 : fx > 0.6 ? 1 : 0;
     const now = e.timeStamp, last = lastTap.current;
@@ -386,8 +418,10 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
     lastTap.current = { t: now, side, streak: quick ? last.streak + 1 : 0 };
     clearTimeout(singleTap.current);
     if (quick) {
-      skip(side * 10);
-      setTapFx({ side: side as -1 | 1, secs: 10 * lastTap.current.streak, key: now });
+      const r = gesture(side < 0 ? "doubleTapLeft" : "doubleTapRight");
+      if (r.act === "timeShiftLocked") { onToast(r.message); return; }
+      skip(side * RULE_SEEK);
+      setTapFx({ side: side as -1 | 1, secs: RULE_SEEK * (lastTap.current.streak || 1), key: now });
       return;
     }
     singleTap.current = setTimeout(toggleControls, DOUBLE_TAP_MS);
@@ -475,9 +509,9 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
                 ? { top: 0, left: 0, transform: `translate(${area.w - safe.r}px, ${safe.t}px) rotate(90deg)` }
                 : { top: safe.t, left: safe.l, transform: "none" }) }
           : { aspectRatio: "16 / 9", background: PANEL_SOLID }),
-        touchAction: seekable ? "manipulation" : undefined, userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
+        touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
         onClick={onTap} onPointerDown={onPressStart} onPointerMove={onPressMove} onPointerUp={onPressEnd} onPointerCancel={onPressEnd} onPointerLeave={onPressEnd}
-        onContextMenu={e => { if (seekable) e.preventDefault(); }}>
+        onContextMenu={e => e.preventDefault()}>
         {ch.video
           ? <video key={ch.video} ref={video} src={ch.video} poster={ch.poster} autoPlay loop muted={muted} playsInline
               className="absolute" style={{ ...(full && epg ? { left: 0, top: 0, width: boxW, height: boxH } : { inset: 0, width: "100%", height: "100%" }), objectFit: full ? "contain" : "cover", filter: bright < 1 ? `brightness(${bright})` : undefined }}
@@ -505,7 +539,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
             scrubbing={scrubbing} fav={fav} bright={bright} vol={vol} up={up} barRef={barRef}
             onBack={exitFull} onFav={toggleFav} onShare={share} onDemo={demo}
             onSkip={secs => { skip(secs); setTapFx({ side: secs < 0 ? -1 : 1, secs: Math.abs(secs), key: Date.now() }); wake(); }}
-            onPlay={togglePlay} onBrowse={() => setEpg(true)} onPip={() => { exitFull(); leave(); }} onMinimize={exitFull}
+            onPlay={togglePlay} showPlay={live.canPause || live.timeShiftLocked} onBrowse={() => setEpg(true)} onPip={() => { exitFull(); leave(); }} onMinimize={exitFull}
             onBright={b => { setBright(b); clearTimeout(hideAt.current); }} onVol={v => { setVol(v); clearTimeout(hideAt.current); }} onSlideEnd={wake}
             onSeekDown={onSeekDown} onSeekMove={onSeekMove} onSeekUp={onSeekUp} />
         )}
@@ -523,9 +557,9 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
           <div className="absolute inset-x-0 bottom-0 flex flex-col" style={{ paddingBottom: 7 }}>
             <div className="flex items-center justify-between px-4" style={{ height: 32 }}>
               <div className="flex items-center gap-2">
-                <button onClick={e => { e.stopPropagation(); togglePlay(); }} aria-label={playing ? "Pause" : "Play"}>
+                {(live.canPause || live.timeShiftLocked) && <button onClick={e => { e.stopPropagation(); togglePlay(); }} aria-label={playing ? "Pause" : "Play"}>
                   {playing ? <Pause size={24} color="#fff" fill="#fff" /> : <Play size={24} color="#fff" fill="#fff" />}
-                </button>
+                </button>}
                 {started && (
                   <span style={{ fontSize: 13, fontWeight: 500, color: "#fff", fontVariantNumeric: "tabular-nums", textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}>{elapsed(time.t)}</span>
                 )}
@@ -539,7 +573,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
         </div>}
         {/* free preview / Explore Packages: stays on screen while the rest of the controls are hidden, sliding down
             to 8px above the 3px seek bar */}
-        {ch.premium && !ch.owned && !(full && epg) && (
+        {live.showExplorePackage && !(full && epg) && (
           <div className="absolute inset-x-0 flex items-end justify-between px-4 pb-2"
             // full screen: 16px above the seek line (its top is 69px up: 16 padding + 40 row + 7 of its 20px box)
             style={full
@@ -547,7 +581,7 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
               : { bottom: 7 + 32, transform: controls ? "none" : "translateY(36px)", transition: "transform .3s cubic-bezier(.2,0,0,1)" }}>
             <span className="flex items-center gap-2 rounded-[4px]" style={{ height: full ? 40 : 32, padding: full ? "0 12px" : "0 8px", fontSize: full ? 14 : 10, background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.25)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
               <span style={{ color: ON_VARIANT }}>Free preview</span>
-              <span style={{ color: ON_SURFACE, fontWeight: 600 }}>• {fmt(preview)} minutes left</span>
+              <span style={{ color: ON_SURFACE, fontWeight: 600 }}>{live.previewOver ? "• Ended" : `• ${fmt(live.previewLeft)} minutes left`}</span>
             </span>
             <button onClick={e => { e.stopPropagation(); exitFull(); onOpenStore({ cur, t: video.current?.currentTime ?? 0 }); }}
               className="flex items-center gap-1 rounded-[4px]" style={{ height: full ? 40 : 32, padding: full ? "0 12px" : "0 8px", background: PILL, boxShadow: PILL_RING, color: "#fff", fontSize: full ? 14 : 10, fontWeight: 600, textShadow: "0 1px 3px rgba(0,0,0,.35)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
@@ -566,11 +600,11 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
             </span>
           </div>
         )}
-        {/* hold: 2x rewind / fast-forward pill */}
+        {/* hold: rewind / fast-forward speed pill */}
         {hold !== 0 && (
           <span className="tv-fade absolute left-1/2 top-3 -translate-x-1/2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-white pointer-events-none"
             style={{ background: "rgba(0,0,0,0.6)", fontSize: 13, fontWeight: 600 }}>
-            {hold < 0 ? <><span className="tracking-[-3px]">◀◀</span> 2x</> : <>2x <span className="tracking-[-3px]">▶▶</span></>}
+            {hold < 0 ? <><span className="tracking-[-3px]">◀◀</span> {holdX}x</> : <>{holdX}x <span className="tracking-[-3px]">▶▶</span></>}
           </span>
         )}
         {/* scrubbing: the time, large, in the middle of the picture */}
@@ -711,10 +745,10 @@ export default function TVScreen({ topInset, bottom, muted, start, onBack, onPro
   );
 }
 
+// a channel's crown (rules.js): gold until the viewer has it; once owned it shows nothing, like a free channel
 export function Crown({ c, size }: { c: Channel; size: number }) {
-  return c.owned
-    ? <img src={iconCrownOwned} alt="Premium, package bought" style={{ width: size, height: size * 17 / 16 }} />
-    : <img src={iconCrown} alt="Premium, free preview" style={{ width: size, height: size }} />;
+  if (!rules().showsCrown({ ch: ruleChannel(c) })) return null;
+  return <img src={iconCrown} alt="Premium, free preview" style={{ width: size, height: size }} />;
 }
 
 // the 9-bar waveform in the tag ripples out from the middle while the channel plays, and rests in full when paused
@@ -756,7 +790,7 @@ function FullControls(p: {
   ch: Channel; shown: boolean; playing: boolean; seekable: boolean; started: boolean; t: number; played: number; scrubbing: boolean;
   fav: boolean; bright: number; vol: number; up: (e: Pt, r: DOMRect) => number; barRef: React.RefObject<HTMLDivElement>;
   onBack: () => void; onFav: () => void; onShare: () => void; onDemo: (label: string) => void; onSkip: (secs: number) => void;
-  onPlay: () => void; onBrowse: () => void; onPip: () => void; onMinimize: () => void;
+  onPlay: () => void; showPlay: boolean; onBrowse: () => void; onPip: () => void; onMinimize: () => void;
   onBright: (v: number) => void; onVol: (v: number) => void; onSlideEnd: () => void;
   onSeekDown: (e: React.PointerEvent<HTMLDivElement>) => void; onSeekMove: (e: React.PointerEvent) => void; onSeekUp: (e: React.PointerEvent) => void;
 }) {
@@ -800,10 +834,10 @@ function FullControls(p: {
             <img src={iconFullRewind} alt="" width={32} height={32} className="block" />
           </button>
         )}
-        <button onClick={stop(p.onPlay)} aria-label={p.playing ? "Pause" : "Play"} className="rounded-full flex items-center justify-center"
+        {p.showPlay && <button onClick={stop(p.onPlay)} aria-label={p.playing ? "Pause" : "Play"} className="rounded-full flex items-center justify-center"
           style={{ width: 80, height: 80, background: "rgba(0,0,0,0.45)", boxShadow: "inset 0 0 0 3px #fff" }}>
           {p.playing ? <Pause size={34} color="#fff" fill="#fff" /> : <Play size={34} color="#fff" fill="#fff" style={{ marginLeft: 4 }} />}
-        </button>
+        </button>}
         {p.seekable && (
           <button onClick={stop(() => p.onSkip(10))} aria-label="Forward 10 seconds" className="rounded-full p-2" style={{ background: "rgba(0,0,0,0.6)" }}>
             <img src={iconFullForward} alt="" width={32} height={32} className="block" />

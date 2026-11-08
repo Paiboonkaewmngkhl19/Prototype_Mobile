@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import icClose from "../assets/sports-pkg/icon-close.svg";
 import NumberPad from "./NumberPad";
 import { PAGE_BG, ON_SURFACE, headerGlass } from "./theme";
+import { RULES, otpRule } from "./mobileRules";
 
 // ─── Confirm OTP (Figma "Prototype" file, Confirm OTP 68:19163) ─────────────────────────────────────────────────────
 // After Process Payment with Charge to AIS Bill: "Confirm OTP" with close, what will be charged and to which billing
@@ -9,7 +10,7 @@ import { PAGE_BG, ON_SURFACE, headerGlass } from "./theme";
 // countdown, Confirm OTP (once all four digits are in) and Resend OTP (once the countdown ends), over the iPhone number
 // pad from the design. A computer keyboard types too (digits, Backspace, Enter). Any 4 digits pass (demo).
 
-const LEN = 4, RESEND_S = 60;
+const LEN = RULES.OTP_DIGITS, RESEND_S = RULES.OTP_RESEND_SECONDS;
 
 export default function OtpPage({ topInset, bottomInset = "0px", amount, per, account, onConfirm, onClose, onToast }: {
   topInset: string; bottomInset?: string;
@@ -24,6 +25,8 @@ export default function OtpPage({ topInset, bottomInset = "0px", amount, per, ac
   const del = () => setCode(c => c.slice(0, -1));
   const full = code.length === LEN;
   const confirm = () => { if (full) onConfirm(); };
+  // rules.js: the payment goes through as soon as the last digit is in
+  useEffect(() => { if (otpRule.accept(code).submit) onConfirm(); }, [code]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (/^\d$/.test(e.key)) type(e.key);

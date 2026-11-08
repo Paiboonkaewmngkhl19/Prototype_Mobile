@@ -4,7 +4,7 @@ import imgAvatar from "../assets/shorts/avatar-user.png";
 import icBack from "../assets/account/icon-back.svg";
 import icEdit from "../assets/account/icon-edit.svg";
 import icChevron from "../assets/account/chevron.svg";
-import { PAGE_BG, ON_SURFACE, ON_VARIANT, GLASS_CARD, CHIP_BORDER, OUTLINE } from "./theme";
+import { PAGE_BG, ON_SURFACE, ON_VARIANT, GLASS_CARD, CHIP_BORDER, OUTLINE, BAND_FADE } from "./theme";
 
 // ─── My Account (Figma "PLAY profile & settings", myAccount_notLinked 256:36034) ─────────────────────────────────
 // Opened from My Account on the Profile card: back + "My Account", the account card (avatar, name with edit, account
@@ -57,7 +57,7 @@ export default function MyAccountPage({ topInset, bottomInset = "0px", fullScree
         <div style={{ height: `calc(${topInset} + 64px)` }} />
         {/* the account card, over the "Screen: Inox" band and above a thick divider */}
         <div className="relative flex flex-col items-center px-4 pt-10 pb-5" style={{ borderBottom: `5px solid ${OUTLINE}` }}>
-          <img src={imgHeaderBg} alt="" className="absolute inset-x-0 top-0 w-full object-cover pointer-events-none" style={{ height: 136 }} />
+          <img src={imgHeaderBg} alt="" className="absolute inset-x-0 top-0 w-full object-cover pointer-events-none" style={{ height: 136, WebkitMaskImage: BAND_FADE, maskImage: BAND_FADE }} />
           <div className="relative w-full flex flex-col gap-4 p-4 rounded-[16px]" style={{
             background: "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0) 45%), linear-gradient(160deg, #3a4254 0%, #2a3040 55%, #1f2533 100%)",
             boxShadow: "inset 0 0 0 1px rgba(214,222,240,0.22), inset 0 1px 0 rgba(255,255,255,0.18), 0 12px 32px rgba(0,0,0,0.5)",
