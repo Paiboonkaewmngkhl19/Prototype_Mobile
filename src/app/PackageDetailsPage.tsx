@@ -190,9 +190,7 @@ export default function PackageDetailsPage({ p, topInset, bottomInset = "0px", o
                 <div className="flex items-center gap-[6px] p-1">
                   {plans.map((x, k) => (
                     <button key={x.per} onClick={() => choose(k)} aria-label={`${x.per} plan`} className="relative rounded-full transition-all duration-300"
-                      style={{ height: 8, width: k === pick ? 24 : 8, background: "rgba(255,255,255,0.35)" }}>
-                      {k === pick && <span className="absolute left-0 top-0 rounded-full" style={{ width: 8, height: 8, background: ON_SURFACE }} />}
-                    </button>
+                      style={{ height: 8, width: k === pick ? 24 : 8, background: k === pick ? "#fff" : "rgba(255,255,255,0.35)" }} />
                   ))}
                 </div>
               </div>

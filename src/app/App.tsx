@@ -599,8 +599,6 @@ export default function App() {
               <HomeScreen
                 topInset={isPhone ? "env(safe-area-inset-top, 0px)" : `${STATUS_H}px`}
                 bottom={feedBottom}
-                shorts={FEED.map(f => ({ img: f.img, title: f.title }))}
-                onOpenShort={i => { flushSync(() => setIdx(i)); go({ tab: "Clips", tvView }); }}
                 onOpenChannel={cur => playTV({ cur, t: 0 })}
                 onOpenStore={() => go({ tab: "Home", tvView, store: true })}
                 onToast={toast}

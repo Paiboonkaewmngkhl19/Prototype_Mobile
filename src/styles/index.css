@@ -2,8 +2,8 @@
 @import './tailwind.css';
 @import './theme.css';
 
-/* OTT logo tags, on every page: an oval in the logo's own colour */
-img[src*="badges/tag-"]{border-radius:9999px !important;}
+/* OTT logo tags, on every page: an oval in the logo's own colour (a Store package card's big logo stays whole) */
+img[src*="badges/tag-"]:not(.brand-logo){border-radius:9999px !important;}
 img[src*="badges/tag-netflix"], img[src*="badges/tag-hbo"]{background:#000 !important;}
 img[src*="badges/tag-prime"]{background:#1a98ff !important;}
 img[src*="badges/tag-disney"]{background:#042437 !important;}
